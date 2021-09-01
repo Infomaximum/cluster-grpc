@@ -77,7 +77,7 @@ repositories {
 
 dependencies {
     
-    compile 'com.infomaximum:cluster:1.0.2rc1'
+    compile 'com.infomaximum:cluster:1.0.2rc2'
 //    compile project(':cluster')
 
     compile 'io.grpc:grpc-netty-shaded:1.40.1'
