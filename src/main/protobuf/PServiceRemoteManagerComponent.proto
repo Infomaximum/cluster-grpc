@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
+
+import "google/protobuf/empty.proto";
+
+import "PRuntimeComponentInfo.proto";
+
+service PServiceRemoteManagerComponent {
+
+  rpc listenerRemoteComponents (google.protobuf.Empty) returns (stream PRuntimeComponentInfoList) {}
+
+}

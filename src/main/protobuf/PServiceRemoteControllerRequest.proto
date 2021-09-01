@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
+
+import "google/protobuf/empty.proto";
+
+import "PRemoteControllerRequestArgument.proto";
+import "PRemoteControllerRequestResult.proto";
+
+service PServiceRemoteControllerRequest {
+
+  rpc request (PRemoteControllerRequestArgument) returns (PRemoteControllerRequestResult) {}
+
+}

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "com.infomaximum.cluster.core.service.transport.network.grpc.struct";
+option java_multiple_files = true;
+
+message PRemoteControllerRequestResult {
+  bytes result = 1;
+  bytes exception = 2;
+}

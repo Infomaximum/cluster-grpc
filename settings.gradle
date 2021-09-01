@@ -1,0 +1,4 @@
+rootProject.name = 'cluster-grpc'
+
+//include ':cluster'
+//project(':cluster').projectDir = new File(settingsDir, '../cluster')
