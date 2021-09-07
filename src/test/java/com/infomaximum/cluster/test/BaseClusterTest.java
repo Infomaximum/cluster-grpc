@@ -7,6 +7,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTr
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Node;
 import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState;
 import com.infomaximum.cluster.test.component.custom.CustomComponent;
+import com.infomaximum.cluster.test.utils.ReaderResources;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -15,8 +16,8 @@ import java.io.IOException;
 
 
 /**
- * Created by kris on 22.04.17.
- * integrationtest_subsystems@leeching.core
+ * openssl req -x509 -nodes -newkey rsa:2048 -keyout private.key -out chain.crt
+ * keytool -import -file chain.crt -keystore truststore.jks
  */
 public abstract class BaseClusterTest {
 
@@ -31,8 +32,17 @@ public abstract class BaseClusterTest {
 
         ExecutorUtil.executors.execute(() -> {
 
-            builderGrpcNetworkTransit1 = new GrpcNetworkTransit.Builder((byte)1, 7001)
-                .addTarget(new Node((byte)2, "localhost:7002"));
+            builderGrpcNetworkTransit1 = new GrpcNetworkTransit.Builder((byte) 1, 7001)
+                    .withTransportSecurity(
+                            ReaderResources.read("ssl/chain.crt"),
+                            ReaderResources.read("ssl/private.key")
+                    )
+                    .addTarget(
+                            new Node.Builder((byte) 2, "localhost:7002")
+                                    .withTransportSecurity(
+                                            ReaderResources.read("ssl/truststore.jks"), "truststore".toCharArray()
+                                    ).build()
+                    );
 
 
             cluster1 = new Cluster.Builder()
@@ -43,8 +53,17 @@ public abstract class BaseClusterTest {
 
         ExecutorUtil.executors.execute(() -> {
 
-            builderGrpcNetworkTransit2 = new GrpcNetworkTransit.Builder((byte)2, 7002)
-                .addTarget(new Node((byte)1, "localhost:7001"));
+            builderGrpcNetworkTransit2 = new GrpcNetworkTransit.Builder((byte) 2, 7002)
+                    .withTransportSecurity(
+                            ReaderResources.read("ssl/chain.crt"),
+                            ReaderResources.read("ssl/private.key")
+                    )
+                    .addTarget(
+                            new Node.Builder((byte) 1, "localhost:7001")
+                                    .withTransportSecurity(
+                                            ReaderResources.read("ssl/truststore.jks"), "truststore".toCharArray()
+                                    ).build()
+                    );
 
             cluster2 = new Cluster.Builder()
                     .withNetworkTransport(builderGrpcNetworkTransit2)
@@ -54,8 +73,8 @@ public abstract class BaseClusterTest {
 
         //Ожидаем старта
         while (
-                !(cluster1 !=null && cluster1.getTransportManager().networkTransit.getState() == NetworkTransitState.STARTED
-                        && cluster2 !=null && cluster2.getTransportManager().networkTransit.getState() == NetworkTransitState.STARTED)
+                !(cluster1 != null && cluster1.getTransportManager().networkTransit.getState() == NetworkTransitState.STARTED
+                        && cluster2 != null && cluster2.getTransportManager().networkTransit.getState() == NetworkTransitState.STARTED)
         ) {
             try {
                 Thread.sleep(500);
