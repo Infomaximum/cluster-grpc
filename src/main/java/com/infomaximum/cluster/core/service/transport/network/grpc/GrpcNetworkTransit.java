@@ -13,6 +13,7 @@ import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,21 +27,27 @@ public class GrpcNetworkTransit extends NetworkTransit {
     private final int port;
     public final List<Node> targets;
 
+    private final byte[] serverCertChain;
+    private final byte[] serverPrivateKey;
+
     private final GrpcServer grpcServer;
     public final GrpcClient grpcClient;
     private final ManagerRuntimeComponent managerRuntimeComponent;
     private final RemoteControllerRequest remoteControllerRequest;
 
-    private GrpcNetworkTransit(TransportManager transportManager, byte nameName, int port, List<Node> targets) {
+    private GrpcNetworkTransit(GrpcNetworkTransit.Builder builder, TransportManager transportManager) {
         this.transportManager = transportManager;
 
-        this.nameName = nameName;
-        this.port = port;
-        this.targets = targets;
+        this.nameName = builder.nodeName;
+        this.port = builder.port;
+        this.targets = builder.targets;
+
+        this.serverCertChain = builder.serverCertChain;
+        this.serverPrivateKey = builder.serverPrivateKey;
 
         this.grpcClient = new GrpcClient(targets);
         this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this);
-        this.grpcServer = new GrpcServer(this, port);
+        this.grpcServer = new GrpcServer(this, port, serverCertChain, serverPrivateKey);
 
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
 
@@ -70,13 +77,16 @@ public class GrpcNetworkTransit extends NetworkTransit {
 
     public static class Builder extends NetworkTransit.Builder {
 
-        private final byte nameName;
+        private final byte nodeName;
         private final int port;
+
+        private byte[] serverCertChain;
+        private byte[] serverPrivateKey;
 
         private final List<Node> targets;
 
-        public Builder(byte nameName, int port) {
-            this.nameName = nameName;
+        public Builder(byte nodeName, int port) {
+            this.nodeName = nodeName;
             this.port = port;
             this.targets = new ArrayList<>();
         }
@@ -86,8 +96,20 @@ public class GrpcNetworkTransit extends NetworkTransit {
             return this;
         }
 
+        public Builder withTransportSecurity(byte[] serverCertChain, byte[] serverPrivateKey) {
+            if (serverCertChain == null) {
+                throw new IllegalArgumentException();
+            }
+            if (serverPrivateKey == null) {
+                throw new IllegalArgumentException();
+            }
+            this.serverCertChain = serverCertChain;
+            this.serverPrivateKey = serverPrivateKey;
+            return this;
+        }
+
         public GrpcNetworkTransit build(TransportManager transportManager) {
-            return new GrpcNetworkTransit(transportManager, nameName, port, targets);
+            return new GrpcNetworkTransit(this, transportManager);
         }
 
     }

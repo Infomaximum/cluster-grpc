@@ -7,6 +7,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 public class GrpcServer implements AutoCloseable {
@@ -15,24 +16,35 @@ public class GrpcServer implements AutoCloseable {
 
     private final int port;
 
+    private final byte[] serverCertChain;
+    private final byte[] serverPrivateKey;
+
     private Server server;
 
     private PServiceRemoteManagerComponentGrpcImpl serviceRemoteManagerComponent;
 
-    public GrpcServer(GrpcNetworkTransit grpcNetworkTransit, int port) {
+    public GrpcServer(GrpcNetworkTransit grpcNetworkTransit, int port, byte[] serverCertChain, byte[] serverPrivateKey) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.port = port;
+
+        this.serverCertChain = serverCertChain;
+        this.serverPrivateKey = serverPrivateKey;
+
         start();
     }
 
     private void start() {
         this.serviceRemoteManagerComponent = new PServiceRemoteManagerComponentGrpcImpl(this);
 
+        ServerBuilder serverBuilder = ServerBuilder.forPort(port);
+        if (serverPrivateKey != null) {
+            serverBuilder.useTransportSecurity(new ByteArrayInputStream(serverCertChain), new ByteArrayInputStream(serverPrivateKey));
+        }
+        serverBuilder
+                .addService(serviceRemoteManagerComponent)
+                .addService(new PServiceRemoteControllerRequestImpl(this));
         try {
-            server = ServerBuilder.forPort(port)
-                    .addService(serviceRemoteManagerComponent)
-                    .addService(new PServiceRemoteControllerRequestImpl(this))
-                    .build().start();
+            server = serverBuilder.build().start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
