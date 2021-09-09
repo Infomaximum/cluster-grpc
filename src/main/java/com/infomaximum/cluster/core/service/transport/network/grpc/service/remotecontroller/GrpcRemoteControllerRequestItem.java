@@ -40,8 +40,10 @@ public class GrpcRemoteControllerRequestItem {
                 .setTargetComponentUniqueId(targetComponentUniqueId)
                 .setRControllerClassName(rControllerClassName)
                 .setMethodName(methodName);
-        for (Object arg: args) {
-            builder.addArgs(ByteString.copyFrom(ObjectSerialize.serialize(arg)));
+        if (args != null) {
+            for (Object arg : args) {
+                builder.addArgs(ByteString.copyFrom(ObjectSerialize.serialize(arg)));
+            }
         }
         PRemoteControllerRequestArgument requestArgument = builder.build();
 
