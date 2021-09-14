@@ -92,7 +92,9 @@ public class GrpcNetworkTransit extends NetworkTransit {
         }
 
         public Builder addTarget(Node target) {
-            this.targets.add(target);
+            if (target.name != nodeName) {
+                this.targets.add(target);
+            }
             return this;
         }
 
