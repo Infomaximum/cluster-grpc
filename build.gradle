@@ -1,5 +1,5 @@
 group 'com.infomaximum'
-version '0.0.2p2'
+version '0.0.2p3'
 
 apply plugin: 'java'
 
@@ -77,7 +77,7 @@ repositories {
 
 dependencies {
     
-    compile 'com.infomaximum:cluster:1.0.2'
+    compile 'com.infomaximum:cluster:1.0.2p2'
 //    compile project(':cluster')
 
     compile 'io.grpc:grpc-netty-shaded:1.40.1'
