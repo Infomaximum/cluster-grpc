@@ -1,20 +1,16 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecontroller;
 
 import com.google.protobuf.ByteString;
-import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.item.GrpcClientItem;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteControllerRequestGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestArgument;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestResult;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.serialize.ObjectSerialize;
-import com.infomaximum.cluster.utils.ExecutorUtil;
-import io.grpc.stub.CallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class GrpcRemoteControllerRequestItem {
 
@@ -75,6 +71,10 @@ public class GrpcRemoteControllerRequestItem {
                 };
         asyncStub.request(requestArgument, observerRequest);
 
-        return completableFuture.get();
+        try {
+            return completableFuture.get();
+        } catch (ExecutionException e) {
+            throw (Exception) e.getCause();
+        }
     }
 }
