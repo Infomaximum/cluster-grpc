@@ -35,8 +35,11 @@ public class GrpcNetworkTransit extends NetworkTransit {
     private final ManagerRuntimeComponent managerRuntimeComponent;
     private final RemoteControllerRequest remoteControllerRequest;
 
-    private GrpcNetworkTransit(GrpcNetworkTransit.Builder builder, TransportManager transportManager) {
+    private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+
+    private GrpcNetworkTransit(GrpcNetworkTransit.Builder builder, TransportManager transportManager, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
         this.transportManager = transportManager;
+        this.uncaughtExceptionHandler = uncaughtExceptionHandler;
 
         this.nameName = builder.nodeName;
         this.port = builder.port;
@@ -69,6 +72,10 @@ public class GrpcNetworkTransit extends NetworkTransit {
         return remoteControllerRequest;
     }
 
+    public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+        return uncaughtExceptionHandler;
+    }
+
     @Override
     public void close() {
         grpcClient.close();
@@ -85,10 +92,13 @@ public class GrpcNetworkTransit extends NetworkTransit {
 
         private final List<Node> targets;
 
-        public Builder(byte nodeName, int port) {
+        private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+
+        public Builder(byte nodeName, int port, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
             this.nodeName = nodeName;
             this.port = port;
             this.targets = new ArrayList<>();
+            this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         }
 
         public Builder addTarget(Node target) {
@@ -111,7 +121,7 @@ public class GrpcNetworkTransit extends NetworkTransit {
         }
 
         public GrpcNetworkTransit build(TransportManager transportManager) {
-            return new GrpcNetworkTransit(this, transportManager);
+            return new GrpcNetworkTransit(this, transportManager, uncaughtExceptionHandler);
         }
 
     }

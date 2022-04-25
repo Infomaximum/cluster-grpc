@@ -41,8 +41,12 @@ public class RemoteManagerRuntimeComponentItem {
                 new StreamObserver<PRuntimeComponentInfoList>() {
                     @Override
                     public void onNext(PRuntimeComponentInfoList value) {
-                        RuntimeComponentInfo[] updateComponents = ConvertRuntimeComponentInfo.convert(value);
-                        update(updateComponents);
+                        try {
+                            RuntimeComponentInfo[] updateComponents = ConvertRuntimeComponentInfo.convert(value);
+                            update(updateComponents);
+                        } catch (Throwable t) {
+                            grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), t);
+                        }
                     }
 
                     @Override
