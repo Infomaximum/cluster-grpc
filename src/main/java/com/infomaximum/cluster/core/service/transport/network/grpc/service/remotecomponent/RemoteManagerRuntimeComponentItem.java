@@ -42,7 +42,7 @@ public class RemoteManagerRuntimeComponentItem {
                     @Override
                     public void onNext(PRuntimeComponentInfoList value) {
                         try {
-                            RuntimeComponentInfo[] updateComponents = ConvertRuntimeComponentInfo.convert(value);
+                            List<RuntimeComponentInfo> updateComponents = ConvertRuntimeComponentInfo.convert(value);
                             update(updateComponents);
                         } catch (Throwable t) {
                             grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), t);
@@ -82,7 +82,7 @@ public class RemoteManagerRuntimeComponentItem {
         asyncStub.listenerRemoteComponents(Empty.newBuilder().build(), observerListenerRemoteComponents);
     }
 
-    private void update(RuntimeComponentInfo[] values) {
+    private void update(List<RuntimeComponentInfo> values) {
         Map<Integer, RuntimeComponentInfo> updateComponents = new HashMap<Integer, RuntimeComponentInfo>();
         for (RuntimeComponentInfo runtimeComponentInfo : values) {
             updateComponents.put(runtimeComponentInfo.uniqueId, runtimeComponentInfo);
