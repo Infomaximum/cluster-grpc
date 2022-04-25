@@ -30,9 +30,16 @@ public abstract class BaseClusterTest {
     @BeforeClass
     public static void init() {
 
+        Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                e.printStackTrace();
+            }
+        };
+
         ExecutorUtil.executors.execute(() -> {
 
-            builderGrpcNetworkTransit1 = new GrpcNetworkTransit.Builder((byte) 1, 7001)
+            builderGrpcNetworkTransit1 = new GrpcNetworkTransit.Builder((byte) 1, 7001, uncaughtExceptionHandler)
                     .withTransportSecurity(
                             ReaderResources.read("ssl/chain.crt"),
                             ReaderResources.read("ssl/private.key")
@@ -59,7 +66,7 @@ public abstract class BaseClusterTest {
 
         ExecutorUtil.executors.execute(() -> {
 
-            builderGrpcNetworkTransit2 = new GrpcNetworkTransit.Builder((byte) 2, 7002)
+            builderGrpcNetworkTransit2 = new GrpcNetworkTransit.Builder((byte) 2, 7002, uncaughtExceptionHandler)
                     .withTransportSecurity(
                             ReaderResources.read("ssl/chain.crt"),
                             ReaderResources.read("ssl/private.key")
