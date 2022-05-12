@@ -7,6 +7,9 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PSer
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestArgument;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestResult;
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.serialize.ObjectSerialize;
+import com.infomaximum.cluster.exception.ExceptionBuilder;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
 import java.util.concurrent.CompletableFuture;
@@ -16,17 +19,17 @@ public class GrpcRemoteControllerRequestItem {
 
     private final GrpcNetworkTransit grpcNetworkTransit;
 
-    private final byte node;
+    private final byte targetNode;
 
     private final GrpcClientItem grpcClientItem;
     private final PServiceRemoteControllerRequestGrpc.PServiceRemoteControllerRequestStub asyncStub;
 
 
-    public GrpcRemoteControllerRequestItem(GrpcNetworkTransit grpcNetworkTransit, byte node) {
+    public GrpcRemoteControllerRequestItem(GrpcNetworkTransit grpcNetworkTransit, byte targetNode) {
         this.grpcNetworkTransit = grpcNetworkTransit;
-        this.node = node;
+        this.targetNode = targetNode;
 
-        this.grpcClientItem = grpcNetworkTransit.grpcClient.getClient(node);
+        this.grpcClientItem = grpcNetworkTransit.grpcClient.getClient(targetNode);
         this.asyncStub = PServiceRemoteControllerRequestGrpc.newStub(grpcClientItem.channel);
     }
 
@@ -61,7 +64,18 @@ public class GrpcRemoteControllerRequestItem {
 
                     @Override
                     public void onError(Throwable throwable) {
-                        completableFuture.completeExceptionally(throwable);
+                        Throwable finalException = throwable;
+                        if (throwable instanceof StatusRuntimeException) {
+                            StatusRuntimeException statusRuntimeException = (StatusRuntimeException) throwable;
+
+                            ExceptionBuilder exceptionBuilder = grpcNetworkTransit.transportManager.getExceptionBuilder();
+                            if (statusRuntimeException.getStatus().equals(Status.UNAVAILABLE)) {
+                                finalException = exceptionBuilder.buildRemoteComponentUnavailableException(targetNode, targetComponentUniqueId, statusRuntimeException);
+                            } else {
+                                finalException = exceptionBuilder.buildTransitRequestException(targetNode, targetComponentUniqueId, statusRuntimeException);
+                            }
+                        }
+                        completableFuture.completeExceptionally(finalException);
                     }
 
                     @Override

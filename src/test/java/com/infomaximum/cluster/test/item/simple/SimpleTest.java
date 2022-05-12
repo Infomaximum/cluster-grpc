@@ -17,7 +17,7 @@ public class SimpleTest extends BaseClusterTest {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleTest.class);
 
-    @Test
+//    @Test
     public void test1() throws Exception {
         MemoryComponent memoryComponent = getCluster1().getAnyLocalComponent(MemoryComponent.class);
         RControllerCustom rControllerCustom = memoryComponent.getRemotes().get(CustomComponent.class, RControllerCustom.class);
