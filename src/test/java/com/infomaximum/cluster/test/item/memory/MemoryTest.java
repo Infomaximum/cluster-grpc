@@ -16,7 +16,7 @@ public class MemoryTest extends BaseClusterTest {
 
     private final static Logger log = LoggerFactory.getLogger(MemoryTest.class);
 
-    @Test
+//    @Test
     public void test1() throws Exception {
         CustomComponent customComponent = getCluster2().getAnyLocalComponent(CustomComponent.class);
         RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
