@@ -11,13 +11,15 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert
 import com.infomaximum.cluster.utils.ExecutorUtil;
 import com.infomaximum.cluster.utils.RandomUtil;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.reflections.Reflections.log;
-
 public class RemoteManagerRuntimeComponentItem {
+
+    private final static Logger log = LoggerFactory.getLogger(RemoteManagerRuntimeComponentItem.class);
 
     private final GrpcNetworkTransit grpcNetworkTransit;
 
@@ -89,7 +91,7 @@ public class RemoteManagerRuntimeComponentItem {
         }
 
         if (!equals(components, updateComponents)) {
-            log.warn("Node({}): Update remote component, node: {}, component: {}", grpcNetworkTransit.getNode(), node, toString(updateComponents));
+            log.info("Node({}): Update remote component, node: {}, component: {}", grpcNetworkTransit.getNode(), node, toString(updateComponents));
         }
         this.components = updateComponents;
     }
