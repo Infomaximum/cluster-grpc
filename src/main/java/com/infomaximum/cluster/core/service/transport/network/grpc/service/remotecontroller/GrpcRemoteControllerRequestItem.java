@@ -69,7 +69,7 @@ public class GrpcRemoteControllerRequestItem {
                             StatusRuntimeException statusRuntimeException = (StatusRuntimeException) throwable;
 
                             ExceptionBuilder exceptionBuilder = grpcNetworkTransit.transportManager.getExceptionBuilder();
-                            if (statusRuntimeException.getStatus().equals(Status.UNAVAILABLE)) {
+                            if (statusRuntimeException.getStatus().getCode() == Status.Code.UNAVAILABLE) {
                                 finalException = exceptionBuilder.buildRemoteComponentUnavailableException(targetNode, targetComponentUniqueId, statusRuntimeException);
                             } else {
                                 finalException = exceptionBuilder.buildTransitRequestException(targetNode, targetComponentUniqueId, statusRuntimeException);
