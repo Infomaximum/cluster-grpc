@@ -3,15 +3,10 @@ syntax = "proto3";
 option java_package = "com.infomaximum.cluster.core.service.transport.network.grpc.struct";
 option java_multiple_files = true;
 
-message PInfo {
-  string componentClass = 1;
-  repeated string dependencies = 2;
-}
-
 message PRuntimeComponentInfo {
   int32 node = 1;
   int32 uniqueId = 2;
-  PInfo info = 3;
+  string uuid = 3;
   bool isSingleton = 4;
   repeated string classNameRControllers = 5;
 }

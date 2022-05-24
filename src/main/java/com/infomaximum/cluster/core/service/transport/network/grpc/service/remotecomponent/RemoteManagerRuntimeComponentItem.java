@@ -104,7 +104,7 @@ public class RemoteManagerRuntimeComponentItem {
         List<RuntimeComponentInfo> items = new ArrayList<>();
         for (Map.Entry<Integer, RuntimeComponentInfo> entry: components.entrySet()) {
             RuntimeComponentInfo runtimeComponentInfo = entry.getValue();
-            String runtimeComponentUuid = runtimeComponentInfo.info.getUuid();
+            String runtimeComponentUuid = runtimeComponentInfo.uuid;
             if (runtimeComponentUuid.equals(uuid)) {
                 items.add(runtimeComponentInfo);
             }
@@ -134,7 +134,7 @@ public class RemoteManagerRuntimeComponentItem {
             if (component2 == null) {
                 return false;
             }
-            if (!component2.info.getUuid().equals(entry1.getValue().info.getUuid())) {
+            if (!component2.uuid.equals(entry1.getValue().uuid)) {
                 return false;
             }
         }
@@ -143,7 +143,7 @@ public class RemoteManagerRuntimeComponentItem {
 
     private static String toString(Map<Integer, RuntimeComponentInfo> components) {
         return components.entrySet().stream()
-                .map(entry -> entry.getKey() + ":" + entry.getValue().info.getUuid())
+                .map(entry -> entry.getKey() + ":" + entry.getValue().uuid)
                 .collect(Collectors.joining(", ", "[", "]"));
     }
 
