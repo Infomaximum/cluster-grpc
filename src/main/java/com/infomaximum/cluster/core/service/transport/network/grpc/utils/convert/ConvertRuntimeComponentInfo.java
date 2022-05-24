@@ -2,10 +2,8 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.utils.conver
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PInfo;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
-import com.infomaximum.cluster.struct.Info;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +29,7 @@ public class ConvertRuntimeComponentInfo {
         PRuntimeComponentInfo.Builder builder = PRuntimeComponentInfo.newBuilder()
                 .setNode(value.node)
                 .setUniqueId(value.uniqueId)
-                .setInfo(convert(value.info))
+                .setUuid(value.uuid)
                 .setIsSingleton(value.isSingleton);
         for (String classNameRController : value.getClassNameRControllers()) {
             builder.addClassNameRControllers(classNameRController);
@@ -39,51 +37,32 @@ public class ConvertRuntimeComponentInfo {
         return builder.build();
     }
 
-    public static PInfo convert(Info value) {
-        PInfo.Builder builder = PInfo.newBuilder()
-                .setComponentClass(value.getComponent().getName());
-        for (Class dependency : value.getDependencies()) {
-            builder.addDependencies(dependency.getName());
-        }
-        return builder.build();
-    }
-
-
     public static List<RuntimeComponentInfo> convert(PRuntimeComponentInfoList value) {
         List<RuntimeComponentInfo> components = new ArrayList<>();
         for (int i = 0; i < value.getPRuntimeComponentInfosCount(); i++) {
             PRuntimeComponentInfo iValue = value.getPRuntimeComponentInfos(i);
-            try {
-                components.add(convert(iValue));
-            } catch (ClassNotFoundException cnfe) {
-                log.debug("Unknown component or its controllers: " + iValue.getInfo().getComponentClass());
-            }
+            components.add(convert(iValue));
         }
         return components;
     }
 
-    public static RuntimeComponentInfo convert(PRuntimeComponentInfo value) throws ClassNotFoundException {
+    public static RuntimeComponentInfo convert(PRuntimeComponentInfo value) {
         HashSet<Class<? extends RController>> classRControllers = new HashSet<>();
         for (int i = 0; i < value.getClassNameRControllersCount(); i++) {
-            classRControllers.add(
-                    (Class<? extends RController>) Class.forName(value.getClassNameRControllers(i))
-            );
+            String classNameRController = value.getClassNameRControllers(i);
+            try {
+                classRControllers.add(
+                        (Class<? extends RController>) Class.forName(classNameRController)
+                );
+            } catch (ClassNotFoundException cnfe) {
+                log.debug("Unknown controllers: {} in component: {}", classNameRController, value.getUuid());
+            }
         }
 
         return new RuntimeComponentInfo(
                 (byte) value.getNode(),
-                value.getUniqueId(), convert(value.getInfo()), value.getIsSingleton(),
+                value.getUniqueId(), value.getUuid(), value.getIsSingleton(),
                 classRControllers
         );
-    }
-
-    public static Info convert(PInfo value) throws ClassNotFoundException {
-        Info.Builder builder = new Info.Builder(
-                Class.forName(value.getComponentClass())
-        );
-        for (int i = 0; i < value.getDependenciesCount(); i++) {
-            builder.withDependence(Class.forName(value.getDependencies(i)));
-        }
-        return builder.build();
     }
 }
