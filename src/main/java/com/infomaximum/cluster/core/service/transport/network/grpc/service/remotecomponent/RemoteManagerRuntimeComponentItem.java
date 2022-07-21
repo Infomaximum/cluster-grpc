@@ -7,6 +7,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTr
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.item.GrpcClientItem;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteManagerComponentGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
+import com.infomaximum.cluster.core.service.transport.network.grpc.utils.MLogger;
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 import com.infomaximum.cluster.utils.RandomUtil;
@@ -21,12 +22,16 @@ public class RemoteManagerRuntimeComponentItem {
 
     private final static Logger log = LoggerFactory.getLogger(RemoteManagerRuntimeComponentItem.class);
 
+    private final static int TIMEOUT_REPEAT_CONNECT = 1000;//Пауза между попытками подключения(в милисекундах)
+
     private final GrpcNetworkTransit grpcNetworkTransit;
 
     private final byte node;
 
     private final GrpcClientItem grpcClientItem;
     private final PServiceRemoteManagerComponentGrpc.PServiceRemoteManagerComponentStub asyncStub;
+
+    private final MLogger mLog;
 
     private final StreamObserver<PRuntimeComponentInfoList> observerListenerRemoteComponents;
 
@@ -39,6 +44,8 @@ public class RemoteManagerRuntimeComponentItem {
         this.grpcClientItem = grpcNetworkTransit.grpcClient.getClient(node);
         this.asyncStub = PServiceRemoteManagerComponentGrpc.newStub(grpcClientItem.channel);
 
+        this.mLog = new MLogger(log, 60*1000/TIMEOUT_REPEAT_CONNECT);//Раз в 1 минуту
+
         this.observerListenerRemoteComponents =
                 new StreamObserver<PRuntimeComponentInfoList>() {
                     @Override
@@ -46,6 +53,8 @@ public class RemoteManagerRuntimeComponentItem {
                         try {
                             List<RuntimeComponentInfo> updateComponents = ConvertRuntimeComponentInfo.convert(value);
                             update(updateComponents);
+
+                            mLog.reset();
                         } catch (Throwable t) {
                             grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), t);
                         }
@@ -53,9 +62,11 @@ public class RemoteManagerRuntimeComponentItem {
 
                     @Override
                     public void onError(Throwable t) {
+                        mLog.warn("Error connect to remote node: {}, exception: {}", grpcClientItem.node.target, t);
+
                         ExecutorUtil.executors.execute(() -> {
                             try {
-                                Thread.sleep(1000);
+                                Thread.sleep(TIMEOUT_REPEAT_CONNECT);
                             } catch (InterruptedException e) {
 
                             }
@@ -65,9 +76,10 @@ public class RemoteManagerRuntimeComponentItem {
 
                     @Override
                     public void onCompleted() {
+                        log.warn("Completed connection with remote node: {}, repeat...", grpcClientItem.node.target);
                         ExecutorUtil.executors.execute(() -> {
                             try {
-                                Thread.sleep(2000);
+                                Thread.sleep(TIMEOUT_REPEAT_CONNECT * 2);
                             } catch (InterruptedException e) {
 
                             }
@@ -91,7 +103,7 @@ public class RemoteManagerRuntimeComponentItem {
         }
 
         if (!equals(components, updateComponents)) {
-            log.info("Node({}): Update remote component, node: {}, component: {}", grpcNetworkTransit.getNode(), node, toString(updateComponents));
+            log.info("Update remote components from node: {}, components: {}", grpcNetworkTransit.getNode(), node, toString(updateComponents));
         }
         this.components = updateComponents;
     }
@@ -102,7 +114,7 @@ public class RemoteManagerRuntimeComponentItem {
 
     public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {
         List<RuntimeComponentInfo> items = new ArrayList<>();
-        for (Map.Entry<Integer, RuntimeComponentInfo> entry: components.entrySet()) {
+        for (Map.Entry<Integer, RuntimeComponentInfo> entry : components.entrySet()) {
             RuntimeComponentInfo runtimeComponentInfo = entry.getValue();
             String runtimeComponentUuid = runtimeComponentInfo.uuid;
             if (runtimeComponentUuid.equals(uuid)) {
@@ -118,7 +130,7 @@ public class RemoteManagerRuntimeComponentItem {
 
     public Collection<RuntimeComponentInfo> find(Class<? extends RController> remoteControllerClazz) {
         List<RuntimeComponentInfo> items = new ArrayList<>();
-        for (Map.Entry<Integer, RuntimeComponentInfo> entry: components.entrySet()) {
+        for (Map.Entry<Integer, RuntimeComponentInfo> entry : components.entrySet()) {
             RuntimeComponentInfo runtimeComponentInfo = entry.getValue();
             if (runtimeComponentInfo.getClassNameRControllers().contains(remoteControllerClazz.getName())) {
                 items.add(runtimeComponentInfo);
