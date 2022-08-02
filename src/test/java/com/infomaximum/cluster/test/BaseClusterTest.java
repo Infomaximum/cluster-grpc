@@ -47,13 +47,13 @@ public abstract class BaseClusterTest {
                     .addTarget(
                             new Node.Builder((byte) 1, "localhost:7001")
                                     .withTransportSecurity(
-                                            ReaderResources.read("ssl/truststore.jks"), "truststore".toCharArray()
+                                            ReaderResources.read("ssl/chain.crt")
                                     ).build()
                     )
                     .addTarget(
                             new Node.Builder((byte) 2, "localhost:7002")
                                     .withTransportSecurity(
-                                            ReaderResources.read("ssl/truststore.jks"), "truststore".toCharArray()
+                                            ReaderResources.read("ssl/chain.crt")
                                     ).build()
                     );
 
@@ -74,13 +74,13 @@ public abstract class BaseClusterTest {
                     .addTarget(
                             new Node.Builder((byte) 1, "localhost:7001")
                                     .withTransportSecurity(
-                                            ReaderResources.read("ssl/truststore.jks"), "truststore".toCharArray()
+                                            ReaderResources.read("ssl/chain.crt")
                                     ).build()
                     )
                     .addTarget(
                             new Node.Builder((byte) 2, "localhost:7002")
                                     .withTransportSecurity(
-                                            ReaderResources.read("ssl/truststore.jks"), "truststore".toCharArray()
+                                            ReaderResources.read("ssl/chain.crt")
                                     ).build()
                     );
 
