@@ -7,9 +7,7 @@ import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
-import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -26,7 +24,7 @@ public class GrpcClientItem implements AutoCloseable {
     public GrpcClientItem(Node node) {
         this.node = node;
 
-        if (node.truststore == null) {
+        if (node.certificate == null) {
             channel = ManagedChannelBuilder.forTarget(node.target)
                     .usePlaintext()
                     .disableRetry()
@@ -34,12 +32,12 @@ public class GrpcClientItem implements AutoCloseable {
         } else {
             SslContext sslContext;
             try {
-
-                KeyStore truststore = KeyStore.getInstance("JKS");
-                truststore.load(new ByteArrayInputStream(node.truststore), node.truststorePassword);
+                KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                keyStore.load(null, new char[0]);
+                keyStore.setCertificateEntry("", node.certificate);
 
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init(truststore);
+                tmf.init(keyStore);
 
                 sslContext = GrpcSslContexts.forClient().trustManager(tmf).build();
             } catch (NoSuchAlgorithmException | KeyStoreException | IOException | CertificateException e) {
