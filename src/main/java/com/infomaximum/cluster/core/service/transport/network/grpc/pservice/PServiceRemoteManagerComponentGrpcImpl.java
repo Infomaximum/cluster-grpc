@@ -8,7 +8,6 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRunti
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.local.event.EventUpdateLocalComponent;
-import com.infomaximum.cluster.utils.ExecutorUtil;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

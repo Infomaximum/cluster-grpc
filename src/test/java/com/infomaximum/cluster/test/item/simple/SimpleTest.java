@@ -5,8 +5,7 @@ import com.infomaximum.cluster.component.memory.remote.RControllerMemory;
 import com.infomaximum.cluster.test.BaseClusterTest;
 import com.infomaximum.cluster.test.component.custom.CustomComponent;
 import com.infomaximum.cluster.test.component.custom.remote.RControllerCustom;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,7 @@ public class SimpleTest extends BaseClusterTest {
 
         String result = rControllerCustom.empty();
 
-        Assert.assertEquals(null, result);
+        Assertions.assertEquals(null, result);
     }
 
 }

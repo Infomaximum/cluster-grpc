@@ -9,8 +9,8 @@ import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState
 import com.infomaximum.cluster.test.component.custom.CustomComponent;
 import com.infomaximum.cluster.test.utils.ReaderResources;
 import com.infomaximum.cluster.utils.ExecutorUtil;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 
@@ -27,7 +27,7 @@ public abstract class BaseClusterTest {
     private static GrpcNetworkTransit.Builder builderGrpcNetworkTransit2;
     private static Cluster cluster2;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
 
         Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
@@ -116,7 +116,7 @@ public abstract class BaseClusterTest {
         return cluster2;
     }
 
-    @AfterClass
+    @AfterAll
     public static void destroy() throws IOException {
         cluster2.close();
         cluster1.close();

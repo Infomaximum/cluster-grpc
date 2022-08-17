@@ -1,0 +1,32 @@
+extraJavaModuleInfo {
+    module("io.grpc:grpc-netty-shaded", "io.grpc.grpc") {
+        mergeJar("io.grpc:grpc-netty-shaded")
+        mergeJar("io.grpc:grpc-core")
+        mergeJar("io.grpc:grpc-api")
+        mergeJar("io.grpc:grpc-context")
+        mergeJar("com.google.errorprone:error_prone_annotations")
+        mergeJar("io.grpc:grpc-protobuf")
+        mergeJar("com.google.api.grpc:proto-google-common-protos")
+        mergeJar("io.grpc:grpc-protobuf-lite")
+        mergeJar("io.grpc:grpc-stub")
+
+        requires("com.google.protobuf.protobufjava")
+        requires("com.google.guava.guava")
+
+        exports("io.grpc")
+        exports("io.grpc.stub")
+        exports("io.grpc.protobuf")
+        exports("io.grpc.stub.annotations")
+        exports("io.grpc.netty.shaded.io.grpc.netty")
+        exports("io.grpc.netty.shaded.io.netty.handler.ssl")
+    }
+    module("com.google.protobuf:protobuf-java", "com.google.protobuf.protobufjava") {
+        exports("com.google.protobuf")
+    }
+    module("javax.annotation:javax.annotation-api", "javax.annotation.api") {
+        exports("javax.annotation")
+    }
+
+    module("com.google.android:annotations", "com.google.android.annotations")
+    module("org.codehaus.mojo:animal-sniffer-annotations", "org.codehaus.mojo.animalsnifferannotations")
+}

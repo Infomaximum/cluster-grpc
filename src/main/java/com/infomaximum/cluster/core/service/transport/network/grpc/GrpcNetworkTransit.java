@@ -55,6 +55,8 @@ public class GrpcNetworkTransit extends NetworkTransit {
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
 
         setState(NetworkTransitState.STARTED);
+
+        com.google.common.util.concurrent.ListenableFuture m;
     }
 
     @Override

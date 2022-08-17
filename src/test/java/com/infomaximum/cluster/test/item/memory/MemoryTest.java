@@ -4,8 +4,8 @@ import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.component.memory.remote.RControllerMemory;
 import com.infomaximum.cluster.test.BaseClusterTest;
 import com.infomaximum.cluster.test.component.custom.CustomComponent;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ public class MemoryTest extends BaseClusterTest {
 
     private final static Logger log = LoggerFactory.getLogger(MemoryTest.class);
 
-//    @Test
+    @Test
     public void test1() throws Exception {
         CustomComponent customComponent = getCluster2().getAnyLocalComponent(CustomComponent.class);
         RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
@@ -26,7 +26,7 @@ public class MemoryTest extends BaseClusterTest {
 
         rControllerMemory.set(key, value);
 
-        Assert.assertEquals(value, rControllerMemory.get(key));
+        Assertions.assertEquals(value, rControllerMemory.get(key));
     }
 
 }
