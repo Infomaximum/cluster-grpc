@@ -57,6 +57,13 @@ publishing {
                 dependencyNodeAnnotationApi.appendNode('artifactId', 'javax.annotation-api')
                 dependencyNodeAnnotationApi.appendNode('version', '1.3.2')
                 dependencyNodeAnnotationApi.appendNode('scope', 'runtime')
+
+                def dependencyNodeProtobufJava = dependenciesNode.appendNode('dependency')
+                dependencyNodeProtobufJava.appendNode('groupId', 'com.google.protobuf')
+                dependencyNodeProtobufJava.appendNode('artifactId', 'protobuf-java')
+                dependencyNodeProtobufJava.appendNode('version', '3.21.7')
+                dependencyNodeProtobufJava.appendNode('scope', 'runtime')
+
             }
         }
     }

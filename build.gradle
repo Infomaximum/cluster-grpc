@@ -27,9 +27,9 @@ if (project.hasProperty('ossrhUsername')) {
 }
 
 group 'com.infomaximum'
-version '0.1.0p6'
+version '0.1.0p7'
 
-ext.moduleName = 'com.infomaximum.cluster-grpc'
+ext.moduleName = 'com.infomaximum.cluster.grpc'
 
 java {
     toolchain {
@@ -119,31 +119,37 @@ dependencies {
 
     implementation('io.grpc:grpc-netty-shaded:1.50.2'){
         exclude group: 'io.grpc', module: 'grpc-core'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
         exclude group: 'com.google.guava', module: 'guava'
     }
     implementation('io.grpc:grpc-core:1.50.2'){
         exclude group: 'io.grpc', module: 'grpc-api'
         exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
     }
     implementation('io.grpc:grpc-api:1.50.2'){
         exclude group: 'com.google.guava', module: 'guava'
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
     }
     implementation ('io.grpc:grpc-protobuf:1.50.2'){
         exclude group: 'io.grpc', module: 'grpc-api'
         exclude group: 'io.grpc', module: 'grpc-protobuf-lite'
         exclude group: 'com.google.guava', module: 'guava'
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
     }
     implementation('io.grpc:grpc-stub:1.50.2') {
         exclude group: 'io.grpc', module: 'grpc-api'
         exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
     }
     compileOnly('com.google.guava:guava:31.1-jre') {
         exclude group: 'com.google.guava', module: 'failureaccess'
         exclude group: 'com.google.guava', module: 'listenablefuture'
         exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
     }
     implementation 'io.projectreactor.tools:blockhound:1.0.6.RELEASE'
 
