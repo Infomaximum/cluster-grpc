@@ -1,9 +1,9 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
 
-import com.google.protobuf.Empty;
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Empty;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;

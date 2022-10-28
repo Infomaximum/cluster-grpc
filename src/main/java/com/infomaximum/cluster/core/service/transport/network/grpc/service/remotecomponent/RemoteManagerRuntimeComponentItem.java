@@ -1,11 +1,11 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecomponent;
 
-import com.google.protobuf.Empty;
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.item.GrpcClientItem;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteManagerComponentGrpc;
+import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Empty;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.MLogger;
 import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;

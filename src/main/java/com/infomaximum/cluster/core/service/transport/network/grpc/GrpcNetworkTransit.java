@@ -8,12 +8,10 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Node;
-import com.infomaximum.cluster.core.service.transport.network.local.LocalNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,8 +53,6 @@ public class GrpcNetworkTransit extends NetworkTransit {
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
 
         setState(NetworkTransitState.STARTED);
-
-        com.google.common.util.concurrent.ListenableFuture m;
     }
 
     @Override
