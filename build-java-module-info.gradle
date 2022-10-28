@@ -6,7 +6,6 @@ extraJavaModuleInfo {
         mergeJar("io.grpc:grpc-context")
         mergeJar("io.grpc:grpc-protobuf")
         mergeJar("com.google.api.grpc:proto-google-common-protos")
-        mergeJar("io.grpc:grpc-protobuf-lite")
         mergeJar("io.grpc:grpc-stub")
         mergeJar("com.google.protobuf:protobuf-java")
 
@@ -23,7 +22,7 @@ extraJavaModuleInfo {
 
         exports("com.google.protobuf")
     }
-    module("javax.annotation:javax.annotation-api", "javax.annotation.api") {
+    module("javax.annotation:javax.annotation-api", "java.annotation") {
         exports("javax.annotation")
     }
     module("com.google.android:annotations", "com.google.android.annotations")

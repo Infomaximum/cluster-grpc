@@ -48,6 +48,16 @@ publishing {
                     url = 'https://github.com/Infomaximum/cluster-grpc'
                 }
             }
+            pom.withXml {//Т.к. у нас толстая банка - удаляем все зависимости их pom.xml, и добавляем необходимые
+                asNode().remove(asNode().get('dependencies'))
+                def dependenciesNode = asNode().appendNode('dependencies')
+
+                def dependencyNodeAnnotationApi = dependenciesNode.appendNode('dependency')
+                dependencyNodeAnnotationApi.appendNode('groupId', 'javax.annotation')
+                dependencyNodeAnnotationApi.appendNode('artifactId', 'javax.annotation-api')
+                dependencyNodeAnnotationApi.appendNode('version', '1.3.2')
+                dependencyNodeAnnotationApi.appendNode('scope', 'runtime')
+            }
         }
     }
     repositories {
