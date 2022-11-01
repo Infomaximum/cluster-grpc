@@ -8,6 +8,7 @@ extraJavaModuleInfo {
         mergeJar("com.google.api.grpc:proto-google-common-protos")
         mergeJar("io.grpc:grpc-stub")
         mergeJar("com.google.protobuf:protobuf-java")
+        mergeJar("io.grpc:grpc-protobuf-lite")
 
         requires("com.google.common")
         requires("java.logging")
@@ -16,6 +17,7 @@ extraJavaModuleInfo {
         exports("io.grpc")
         exports("io.grpc.stub")
         exports("io.grpc.protobuf")
+        exports("io.grpc.protobuf.lite")
         exports("io.grpc.stub.annotations")
         exports("io.grpc.netty.shaded.io.grpc.netty")
         exports("io.grpc.netty.shaded.io.netty.handler.ssl")
@@ -25,6 +27,7 @@ extraJavaModuleInfo {
     module("javax.annotation:javax.annotation-api", "java.annotation") {
         exports("javax.annotation")
     }
+    module("com.google.guava:failureaccess", "com.google.guava.failureaccess")
     module("com.google.android:annotations", "com.google.android.annotations")
     module("org.codehaus.mojo:animal-sniffer-annotations", "org.codehaus.mojo.animalsnifferannotations")
 }

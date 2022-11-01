@@ -16,18 +16,16 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'com.google.protobuf' version '0.8.18'
-    id("de.jjohannes.extra-java-module-info") version "0.15"
-    id "org.checkerframework" version "0.6.15" //https://github.com/kelloggm/checkerframework-gradle-plugin
+    id 'org.gradlex.extra-java-module-info' version '1.0'
+    id 'org.checkerframework' version '0.6.15' //https://github.com/kelloggm/checkerframework-gradle-plugin
 }
 apply from: 'build-java-module-info.gradle'
-//apply from: 'https://raw.githubusercontent.com/Infomaximum/platform-java-module-info/0.0.16/com.infomaximum.platform-java-module-info.gradle'
-apply from: '/home/kris/IdeaProjects/platform-java-module-info/com.infomaximum.platform-java-module-info.gradle'
 if (project.hasProperty('ossrhUsername')) {
     apply from: 'publish.gradle'
 }
 
 group 'com.infomaximum'
-version '0.1.0p7'
+version '0.1.0p10'
 
 ext.moduleName = 'com.infomaximum.cluster.grpc'
 
@@ -107,8 +105,11 @@ jar {
             it.isDirectory() ? it : zipTree(it)
         }
     } {
-        exclude "META-INF/maven/**"
-        exclude "META-INF/versions/**"
+        exclude "META-INF/maven/**", "META-INF/versions/**", "module-info.class"
+    }
+    from("jar/module-info.class")
+    exclude { FileTreeElement el ->
+        return el.file.toPath().toString().endsWith("/main/module-info.class")
     }
 }
 
@@ -144,8 +145,13 @@ dependencies {
         exclude group: 'com.google.guava', module: 'guava'
         exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
     }
+    implementation('io.grpc:grpc-protobuf-lite:1.50.2') {
+        exclude group: 'io.grpc', module: 'grpc-api'
+        exclude group: 'com.google.protobuf', module: 'protobuf-javalite'
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    }
     compileOnly('com.google.guava:guava:31.1-jre') {
-        exclude group: 'com.google.guava', module: 'failureaccess'
         exclude group: 'com.google.guava', module: 'listenablefuture'
         exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
@@ -167,7 +173,7 @@ dependencies {
 
 task test_integration(type: Test, description: 'Integration test', group: 'Verification') {}
 
-tasks.withType(Copy).all { duplicatesStrategy 'exclude' }
+tasks.withType(Copy).all { duplicatesStrategy 'EXCLUDE' }
 
 tasks.withType(GenerateModuleMetadata) {
     enabled = false

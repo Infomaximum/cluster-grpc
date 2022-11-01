@@ -40,21 +40,23 @@ public abstract class BaseClusterTest {
         ExecutorUtil.executors.execute(() -> {
 
             builderGrpcNetworkTransit1 = new GrpcNetworkTransit.Builder((byte) 1, 7001, uncaughtExceptionHandler)
-                    .withTransportSecurity(
-                            ReaderResources.read("ssl/chain.crt"),
-                            ReaderResources.read("ssl/private.key")
-                    )
+//                    .withTransportSecurity(
+//                            ReaderResources.read("ssl/chain.crt"),
+//                            ReaderResources.read("ssl/private.key")
+//                    )
                     .addTarget(
                             new Node.Builder((byte) 1, "localhost:7001")
-                                    .withTransportSecurity(
-                                            ReaderResources.read("ssl/chain.crt")
-                                    ).build()
+//                                    .withTransportSecurity(
+//                                            ReaderResources.read("ssl/chain.crt")
+//                                    )
+                                    .build()
                     )
                     .addTarget(
                             new Node.Builder((byte) 2, "localhost:7002")
-                                    .withTransportSecurity(
-                                            ReaderResources.read("ssl/chain.crt")
-                                    ).build()
+//                                    .withTransportSecurity(
+//                                            ReaderResources.read("ssl/chain.crt")
+//                                    )
+                                    .build()
                     );
 
 
@@ -67,21 +69,23 @@ public abstract class BaseClusterTest {
         ExecutorUtil.executors.execute(() -> {
 
             builderGrpcNetworkTransit2 = new GrpcNetworkTransit.Builder((byte) 2, 7002, uncaughtExceptionHandler)
-                    .withTransportSecurity(
-                            ReaderResources.read("ssl/chain.crt"),
-                            ReaderResources.read("ssl/private.key")
-                    )
+//                    .withTransportSecurity(
+//                            ReaderResources.read("ssl/chain.crt"),
+//                            ReaderResources.read("ssl/private.key")
+//                    )
                     .addTarget(
                             new Node.Builder((byte) 1, "localhost:7001")
-                                    .withTransportSecurity(
-                                            ReaderResources.read("ssl/chain.crt")
-                                    ).build()
+//                                    .withTransportSecurity(
+//                                            ReaderResources.read("ssl/chain.crt")
+//                                    )
+                                    .build()
                     )
                     .addTarget(
                             new Node.Builder((byte) 2, "localhost:7002")
-                                    .withTransportSecurity(
-                                            ReaderResources.read("ssl/chain.crt")
-                                    ).build()
+//                                    .withTransportSecurity(
+//                                            ReaderResources.read("ssl/chain.crt")
+//                                    )
+                                    .build()
                     );
 
             cluster2 = new Cluster.Builder()

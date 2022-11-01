@@ -25,7 +25,7 @@ public class GrpcClientItem implements AutoCloseable {
         this.node = node;
 
         if (node.certificate == null) {
-            channel = ManagedChannelBuilder.forTarget(node.target)
+            channel = NettyChannelBuilder.forTarget(node.target)
                     .usePlaintext()
                     .disableRetry()
                     .build();
