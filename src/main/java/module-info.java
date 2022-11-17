@@ -7,5 +7,4 @@ module com.infomaximum.cluster.grpc {
     requires com.google.guava.failureaccess;
 
     exports com.infomaximum.cluster.core.service.transport.network.grpc;
-    exports com.infomaximum.cluster.core.service.transport.network.grpc.struct;
 }

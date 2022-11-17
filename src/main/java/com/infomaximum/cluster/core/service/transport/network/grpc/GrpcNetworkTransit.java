@@ -4,14 +4,23 @@ import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.network.ManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.NetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
+import com.infomaximum.cluster.core.service.transport.network.grpc.engine.GrpcManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.GrpcClient;
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecontroller.GrpcRemoteControllerRequest;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Node;
+import com.infomaximum.cluster.core.service.transport.network.grpc.utils.CertificateUtils;
 import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,10 +32,7 @@ public class GrpcNetworkTransit extends NetworkTransit {
 
     private final byte nameName;
     private final int port;
-    public final List<Node> targets;
-
-    private final byte[] serverCertChain;
-    private final byte[] serverPrivateKey;
+    public final List<RemoteNode> targets;
 
     private final GrpcServer grpcServer;
     public final GrpcClient grpcClient;
@@ -43,12 +49,10 @@ public class GrpcNetworkTransit extends NetworkTransit {
         this.port = builder.port;
         this.targets = builder.targets;
 
-        this.serverCertChain = builder.serverCertChain;
-        this.serverPrivateKey = builder.serverPrivateKey;
-
-        this.grpcClient = new GrpcClient(targets);
+        this.grpcClient = new GrpcClient(targets, builder.fileCertChain, builder.filePrivateKey, builder.trustStore);
         this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this);
-        this.grpcServer = new GrpcServer(this, port, serverCertChain, serverPrivateKey);
+
+        this.grpcServer = new GrpcServer(this, port, builder.fileCertChain, builder.filePrivateKey, builder.trustStore);
 
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
 
@@ -85,10 +89,11 @@ public class GrpcNetworkTransit extends NetworkTransit {
         private final byte nodeName;
         private final int port;
 
-        private byte[] serverCertChain;
-        private byte[] serverPrivateKey;
+        private byte[] fileCertChain;
+        private byte[] filePrivateKey;
+        private TrustManagerFactory trustStore;
 
-        private final List<Node> targets;
+        private final List<RemoteNode> targets;
 
         private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -99,24 +104,26 @@ public class GrpcNetworkTransit extends NetworkTransit {
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         }
 
-        public Builder addTarget(Node target) {
+        public Builder addTarget(RemoteNode target) {
             if (target.name != nodeName) {
                 this.targets.add(target);
             }
             return this;
         }
 
-        public Builder withTransportSecurity(byte[] serverCertChain, byte[] serverPrivateKey) {
-            if (serverCertChain == null) {
+        public Builder withTransportSecurity(byte[] fileCertChain, byte[] filePrivateKey, byte[]... trustCertificates) {
+            if (fileCertChain == null) {
                 throw new IllegalArgumentException();
             }
-            if (serverPrivateKey == null) {
+            if (filePrivateKey == null) {
                 throw new IllegalArgumentException();
             }
-            this.serverCertChain = serverCertChain;
-            this.serverPrivateKey = serverPrivateKey;
+            this.fileCertChain = fileCertChain;
+            this.filePrivateKey = filePrivateKey;
+            trustStore = CertificateUtils.buildTrustStore(fileCertChain, trustCertificates);
             return this;
         }
+
 
         public GrpcNetworkTransit build(TransportManager transportManager) {
             return new GrpcNetworkTransit(this, transportManager, uncaughtExceptionHandler);

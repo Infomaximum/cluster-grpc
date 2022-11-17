@@ -1,9 +1,12 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.engine.client;
 
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.item.GrpcClientItem;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Node;
+import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 
+import javax.net.ssl.TrustManagerFactory;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,10 +16,10 @@ public class GrpcClient implements AutoCloseable {
 
     private final Map<Byte, GrpcClientItem> clients;
 
-    public GrpcClient(List<Node> targets) {
+    public GrpcClient(List<RemoteNode> targets, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
         this.clients = new HashMap<>();
-        for (Node target: targets) {
-            this.clients.put(target.name, new GrpcClientItem(target));
+        for (RemoteNode target: targets) {
+            this.clients.put(target.name, new GrpcClientItem(target, fileCertChain, filePrivateKey, trustStore));
         }
     }
 

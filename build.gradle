@@ -12,7 +12,6 @@ buildscript {
 
 plugins {
     id 'java'
-//    id 'java-library'
     id 'maven-publish'
     id 'signing'
     id 'com.google.protobuf' version '0.8.18'
@@ -95,7 +94,6 @@ configurations {
 
 repositories {
     mavenCentral()
-    maven { url "https://maven.office.infomaximum.com/repository/maven-releases/" }
 }
 
 jar {

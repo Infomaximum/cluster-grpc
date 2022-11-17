@@ -27,6 +27,7 @@ extraJavaModuleInfo {
     module("javax.annotation:javax.annotation-api", "java.annotation") {
         exports("javax.annotation")
     }
+    module("com.google.guava:listenablefuture", "com.google.guava.listenablefuture")
     module("com.google.guava:failureaccess", "com.google.guava.failureaccess"){
         exports("com.google.common.util.concurrent.internal")
     }

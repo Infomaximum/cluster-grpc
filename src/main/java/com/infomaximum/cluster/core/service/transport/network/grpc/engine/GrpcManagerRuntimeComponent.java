@@ -1,8 +1,9 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc;
+package com.infomaximum.cluster.core.service.transport.network.grpc.engine;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.core.service.transport.network.ManagerRuntimeComponent;
+import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecomponent.RemoteManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;
 import org.slf4j.Logger;

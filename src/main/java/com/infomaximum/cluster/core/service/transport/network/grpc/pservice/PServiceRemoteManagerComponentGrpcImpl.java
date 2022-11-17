@@ -1,7 +1,7 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcManagerRuntimeComponent;
+import com.infomaximum.cluster.core.service.transport.network.grpc.engine.GrpcManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Empty;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;

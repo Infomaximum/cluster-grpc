@@ -2,7 +2,7 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.service.remo
 
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Node;
+import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
 import com.infomaximum.cluster.utils.GlobalUniqueIdUtils;
 
 import java.util.HashMap;
@@ -19,12 +19,12 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.currentNode = grpcNetworkTransit.getNode();
         this.items = new HashMap<>();
-        for (Node node : grpcNetworkTransit.targets) {
-            if (currentNode == node.name) {
+        for (RemoteNode remoteNode : grpcNetworkTransit.targets) {
+            if (currentNode == remoteNode.name) {
                 continue;
             }
-            items.put(node.name, new GrpcRemoteControllerRequestItem(
-                    grpcNetworkTransit, node.name
+            items.put(remoteNode.name, new GrpcRemoteControllerRequestItem(
+                    grpcNetworkTransit, remoteNode.name
             ));
         }
     }

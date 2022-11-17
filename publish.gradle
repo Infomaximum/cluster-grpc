@@ -58,6 +58,21 @@ publishing {
                 dependencyNodeAnnotationApi.appendNode('version', '1.3.2')
                 dependencyNodeAnnotationApi.appendNode('scope', 'runtime')
 
+                def dependencyNodeGuava = dependenciesNode.appendNode('dependency')
+                dependencyNodeGuava.appendNode('groupId', 'com.google.guava')
+                dependencyNodeGuava.appendNode('artifactId', 'guava')
+                dependencyNodeGuava.appendNode('version', '31.1-jre')
+                dependencyNodeGuava.appendNode('scope', 'runtime')
+                def dependencyNodeGuavaExclusions = dependencyNodeGuava.appendNode('exclusions')
+                def dependencyNodeGuavaExclusionJ2objc = dependencyNodeGuavaExclusions.appendNode('exclusion')
+                dependencyNodeGuavaExclusionJ2objc.appendNode('groupId', 'com.google.j2objc')
+                dependencyNodeGuavaExclusionJ2objc.appendNode('artifactId', 'j2objc-annotations')
+                def dependencyNodeGuavaExclusionFindbugs = dependencyNodeGuavaExclusions.appendNode('exclusion')
+                dependencyNodeGuavaExclusionFindbugs.appendNode('groupId', 'com.google.code.findbugs')
+                dependencyNodeGuavaExclusionFindbugs.appendNode('artifactId', 'jsr305')
+                def dependencyNodeGuavaExclusionErrorprone = dependencyNodeGuavaExclusions.appendNode('exclusion')
+                dependencyNodeGuavaExclusionErrorprone.appendNode('groupId', 'com.google.errorprone')
+                dependencyNodeGuavaExclusionErrorprone.appendNode('artifactId', 'error_prone_annotations')
             }
         }
     }

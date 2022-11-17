@@ -3,7 +3,7 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.service.remo
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Node;
+import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
 import com.infomaximum.cluster.utils.RandomUtil;
 
 import java.util.ArrayList;
@@ -22,12 +22,12 @@ public class RemoteManagerRuntimeComponent {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.currentNode = grpcNetworkTransit.getNode();
         this.items = new HashMap<>();
-        for (Node node : grpcNetworkTransit.targets) {
-            if (currentNode == node.name) {
+        for (RemoteNode remoteNode : grpcNetworkTransit.targets) {
+            if (currentNode == remoteNode.name) {
                 continue;
             }
-            items.put(node.name, new RemoteManagerRuntimeComponentItem(
-                    grpcNetworkTransit, node.name
+            items.put(remoteNode.name, new RemoteManagerRuntimeComponentItem(
+                    grpcNetworkTransit, remoteNode.name
             ));
         }
     }

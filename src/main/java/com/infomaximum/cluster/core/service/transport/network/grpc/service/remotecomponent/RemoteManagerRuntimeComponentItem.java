@@ -62,7 +62,7 @@ public class RemoteManagerRuntimeComponentItem {
 
                     @Override
                     public void onError(Throwable t) {
-                        mLog.warn("Error connect to remote node: {}, exception: {}", grpcClientItem.node.target, t);
+                        mLog.warn("Error connect to remote node: {}, exception: {}", grpcClientItem.remoteNode.target, t);
 
                         ExecutorUtil.executors.execute(() -> {
                             try {
@@ -76,7 +76,7 @@ public class RemoteManagerRuntimeComponentItem {
 
                     @Override
                     public void onCompleted() {
-                        log.warn("Completed connection with remote node: {}, repeat...", grpcClientItem.node.target);
+                        log.warn("Completed connection with remote node: {}, repeat...", grpcClientItem.remoteNode.target);
                         ExecutorUtil.executors.execute(() -> {
                             try {
                                 Thread.sleep(TIMEOUT_REPEAT_CONNECT * 2);
