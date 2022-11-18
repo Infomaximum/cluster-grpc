@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.utils;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils;
 
 
 import org.slf4j.Logger;

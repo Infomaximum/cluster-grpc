@@ -1,12 +1,12 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecontroller;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller;
 
 import com.google.protobuf.ByteString;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.item.GrpcClientItem;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.client.item.GrpcClientItem;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteControllerRequestGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestArgument;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestResult;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.serialize.ObjectSerialize;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.serialize.ObjectSerialize;
 import com.infomaximum.cluster.exception.ExceptionBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 
 public class GrpcRemoteControllerRequestItem {
 
-    private final GrpcNetworkTransit grpcNetworkTransit;
+    private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final byte targetNode;
 
@@ -25,7 +25,7 @@ public class GrpcRemoteControllerRequestItem {
     private final PServiceRemoteControllerRequestGrpc.PServiceRemoteControllerRequestStub asyncStub;
 
 
-    public GrpcRemoteControllerRequestItem(GrpcNetworkTransit grpcNetworkTransit, byte targetNode) {
+    public GrpcRemoteControllerRequestItem(GrpcNetworkTransitImpl grpcNetworkTransit, byte targetNode) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.targetNode = targetNode;
 

@@ -2,11 +2,11 @@ package com.infomaximum.cluster.test;
 
 import com.infomaximum.cluster.Cluster;
 import com.infomaximum.cluster.ComponentBuilder;
+import com.infomaximum.cluster.NetworkTransit;
 import com.infomaximum.cluster.component.memory.MemoryComponent;
-import com.infomaximum.cluster.core.service.transport.network.NetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
-import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState;
+import com.infomaximum.cluster.core.service.transport.network.grpc.UpdateConnect;
 import com.infomaximum.cluster.test.component.custom.CustomComponent;
 import com.infomaximum.cluster.test.utils.ReaderResources;
 import com.infomaximum.cluster.utils.ExecutorUtil;
@@ -32,10 +32,7 @@ public class Clusters implements AutoCloseable {
         });
 
         //Ожидаем старта
-        while (
-                !(cluster1 != null && cluster1.getTransportManager().networkTransit.getState() == NetworkTransitState.STARTED
-                        && cluster2 != null && cluster2.getTransportManager().networkTransit.getState() == NetworkTransitState.STARTED)
-        ) {
+        while (!(cluster1 != null && cluster2 != null )) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -129,6 +126,12 @@ public class Clusters implements AutoCloseable {
                     }
                 }
             }
+            return this;
+        }
+
+        public Builder withListenerUpdateConnect(UpdateConnect updateConnect) {
+            builderNetworkTransit1.withListenerUpdateConnect(updateConnect);
+            builderNetworkTransit2.withListenerUpdateConnect(updateConnect);
             return this;
         }
 

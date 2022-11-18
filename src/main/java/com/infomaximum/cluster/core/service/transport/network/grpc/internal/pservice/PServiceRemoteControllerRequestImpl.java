@@ -1,12 +1,13 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice;
 
 import com.google.protobuf.ByteString;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteControllerRequestGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestArgument;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestResult;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.serialize.ObjectSerialize;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.serialize.ObjectSerialize;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ public class PServiceRemoteControllerRequestImpl extends PServiceRemoteControlle
     private final static Logger log = LoggerFactory.getLogger(PServiceRemoteControllerRequestImpl.class);
 
     private final TransportManager transportManager;
-    private final GrpcNetworkTransit grpcNetworkTransit;
+    private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     public PServiceRemoteControllerRequestImpl(GrpcServer grpcServer) {
         this.transportManager = grpcServer.grpcNetworkTransit.transportManager;

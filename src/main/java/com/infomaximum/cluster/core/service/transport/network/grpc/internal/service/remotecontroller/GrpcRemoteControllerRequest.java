@@ -1,8 +1,8 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecontroller;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller;
 
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.utils.GlobalUniqueIdUtils;
 
 import java.util.HashMap;
@@ -10,12 +10,12 @@ import java.util.Map;
 
 public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
-    private final GrpcNetworkTransit grpcNetworkTransit;
+    private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final byte currentNode;
     private final Map<Byte, GrpcRemoteControllerRequestItem> items;
 
-    public GrpcRemoteControllerRequest(GrpcNetworkTransit grpcNetworkTransit) {
+    public GrpcRemoteControllerRequest(GrpcNetworkTransitImpl grpcNetworkTransit) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.currentNode = grpcNetworkTransit.getNode();
         this.items = new HashMap<>();

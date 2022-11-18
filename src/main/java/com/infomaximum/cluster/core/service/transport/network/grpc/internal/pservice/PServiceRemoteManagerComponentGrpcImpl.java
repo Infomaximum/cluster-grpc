@@ -1,11 +1,12 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.GrpcManagerRuntimeComponent;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcManagerRuntimeComponent;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteManagerComponentGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Empty;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.convert.ConvertRuntimeComponentInfo;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.local.event.EventUpdateLocalComponent;
 import io.grpc.stub.StreamObserver;

@@ -1,14 +1,14 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecomponent;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecomponent;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.item.GrpcClientItem;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.client.item.GrpcClientItem;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteManagerComponentGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.Empty;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRuntimeComponentInfoList;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.MLogger;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert.ConvertRuntimeComponentInfo;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.MLogger;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.convert.ConvertRuntimeComponentInfo;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 import com.infomaximum.cluster.utils.RandomUtil;
 import io.grpc.stub.StreamObserver;
@@ -24,7 +24,7 @@ public class RemoteManagerRuntimeComponentItem {
 
     private final static int TIMEOUT_REPEAT_CONNECT = 1000;//Пауза между попытками подключения(в милисекундах)
 
-    private final GrpcNetworkTransit grpcNetworkTransit;
+    private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final byte node;
 
@@ -37,7 +37,7 @@ public class RemoteManagerRuntimeComponentItem {
 
     private Map<Integer, RuntimeComponentInfo> components;
 
-    public RemoteManagerRuntimeComponentItem(GrpcNetworkTransit grpcNetworkTransit, byte node) {
+    public RemoteManagerRuntimeComponentItem(GrpcNetworkTransitImpl grpcNetworkTransit, byte node) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.node = node;
 

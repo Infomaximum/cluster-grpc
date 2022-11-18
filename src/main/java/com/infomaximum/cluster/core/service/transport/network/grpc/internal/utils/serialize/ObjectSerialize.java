@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.utils.serialize;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.serialize;
 
 import java.io.*;
 

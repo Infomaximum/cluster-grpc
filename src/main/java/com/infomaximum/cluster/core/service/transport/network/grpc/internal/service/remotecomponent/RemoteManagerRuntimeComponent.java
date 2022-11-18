@@ -1,9 +1,9 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecomponent;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecomponent;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.utils.RandomUtil;
 
 import java.util.ArrayList;
@@ -13,12 +13,12 @@ import java.util.Map;
 
 public class RemoteManagerRuntimeComponent {
 
-    private final GrpcNetworkTransit grpcNetworkTransit;
+    private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final byte currentNode;
     private final Map<Byte, RemoteManagerRuntimeComponentItem> items;
 
-    public RemoteManagerRuntimeComponent(GrpcNetworkTransit grpcNetworkTransit) {
+    public RemoteManagerRuntimeComponent(GrpcNetworkTransitImpl grpcNetworkTransit) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.currentNode = grpcNetworkTransit.getNode();
         this.items = new HashMap<>();

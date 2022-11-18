@@ -1,55 +1,24 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.utils;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils;
 
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Enumeration;
 
 public class CertificateUtils {
-
-    //        public Builder withTransportSecurity(byte[] certificate) {
-//            try {
-//                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-//                try (InputStream in = new ByteArrayInputStream(certificate)) {
-//                    this.certificate = certificateFactory.generateCertificate(in);
-//                }
-//            } catch (CertificateException | IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            return this;
-//        }
 
     public static X509Certificate build(byte[] certificate) throws CertificateException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         try (InputStream in = new ByteArrayInputStream(certificate)) {
             return (X509Certificate) certificateFactory.generateCertificate(in);
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static PrivateKey buildPrivateKey(byte[] privateKey) {
-
-        try {
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey);
-
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            return keyFactory.generatePrivate(keySpec);
-
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
     }

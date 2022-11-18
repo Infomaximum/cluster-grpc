@@ -1,10 +1,9 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.engine.server;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server;
 
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
-import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteControllerRequestImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteManagerComponentGrpcImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.CertificateUtils;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice.PServiceRemoteControllerRequestImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice.PServiceRemoteManagerComponentGrpcImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
@@ -13,18 +12,13 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
 
-import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 
 public class GrpcServer implements AutoCloseable {
 
-    public final GrpcNetworkTransit grpcNetworkTransit;
+    public final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final int port;
 
@@ -36,7 +30,7 @@ public class GrpcServer implements AutoCloseable {
 
     private PServiceRemoteManagerComponentGrpcImpl serviceRemoteManagerComponent;
 
-    public GrpcServer(GrpcNetworkTransit grpcNetworkTransit, int port, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
+    public GrpcServer(GrpcNetworkTransitImpl grpcNetworkTransit, int port, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.port = port;
 

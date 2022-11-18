@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.utils.convert;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.convert;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;

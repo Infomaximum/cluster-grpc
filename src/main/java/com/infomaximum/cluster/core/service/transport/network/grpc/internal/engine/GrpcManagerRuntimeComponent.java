@@ -1,10 +1,10 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.engine;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.core.service.transport.network.ManagerRuntimeComponent;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecomponent.RemoteManagerRuntimeComponent;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecomponent.RemoteManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ public class GrpcManagerRuntimeComponent implements ManagerRuntimeComponent {
     public final LocalManagerRuntimeComponent localManagerRuntimeComponent;
     private final RemoteManagerRuntimeComponent remoteManagerRuntimeComponent;
 
-    public GrpcManagerRuntimeComponent(GrpcNetworkTransit grpcNetworkTransit) {
+    public GrpcManagerRuntimeComponent(GrpcNetworkTransitImpl grpcNetworkTransit) {
         this.currentNode = grpcNetworkTransit.getNode();
         this.localManagerRuntimeComponent = new LocalManagerRuntimeComponent();
         this.remoteManagerRuntimeComponent = new RemoteManagerRuntimeComponent(grpcNetworkTransit);

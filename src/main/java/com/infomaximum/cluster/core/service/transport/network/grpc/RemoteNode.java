@@ -1,13 +1,5 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc;
 
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-
 public class RemoteNode {
 
     public final byte name;

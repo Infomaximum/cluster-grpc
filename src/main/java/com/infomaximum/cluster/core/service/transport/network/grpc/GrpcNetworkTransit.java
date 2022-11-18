@@ -1,107 +1,35 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc;
 
+import com.infomaximum.cluster.NetworkTransit;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
-import com.infomaximum.cluster.core.service.transport.network.ManagerRuntimeComponent;
-import com.infomaximum.cluster.core.service.transport.network.NetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.GrpcManagerRuntimeComponent;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.client.GrpcClient;
-import com.infomaximum.cluster.core.service.transport.network.grpc.engine.server.GrpcServer;
-import com.infomaximum.cluster.core.service.transport.network.grpc.service.remotecontroller.GrpcRemoteControllerRequest;
-import com.infomaximum.cluster.core.service.transport.network.grpc.utils.CertificateUtils;
-import com.infomaximum.cluster.core.service.transport.struct.NetworkTransitState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.CertificateUtils;
 
 import javax.net.ssl.TrustManagerFactory;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class GrpcNetworkTransit extends NetworkTransit {
+public interface GrpcNetworkTransit {
 
-    private final static Logger log = LoggerFactory.getLogger(GrpcNetworkTransit.class);
+    class Builder extends NetworkTransit.Builder {
 
-    public final TransportManager transportManager;
-
-    private final byte nameName;
-    private final int port;
-    public final List<RemoteNode> targets;
-
-    private final GrpcServer grpcServer;
-    public final GrpcClient grpcClient;
-    private final ManagerRuntimeComponent managerRuntimeComponent;
-    private final RemoteControllerRequest remoteControllerRequest;
-
-    private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
-
-    private GrpcNetworkTransit(GrpcNetworkTransit.Builder builder, TransportManager transportManager, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
-        this.transportManager = transportManager;
-        this.uncaughtExceptionHandler = uncaughtExceptionHandler;
-
-        this.nameName = builder.nodeName;
-        this.port = builder.port;
-        this.targets = builder.targets;
-
-        this.grpcClient = new GrpcClient(targets, builder.fileCertChain, builder.filePrivateKey, builder.trustStore);
-        this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this);
-
-        this.grpcServer = new GrpcServer(this, port, builder.fileCertChain, builder.filePrivateKey, builder.trustStore);
-
-        this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
-
-        setState(NetworkTransitState.STARTED);
-    }
-
-    @Override
-    public byte getNode() {
-        return nameName;
-    }
-
-    @Override
-    public ManagerRuntimeComponent getManagerRuntimeComponent() {
-        return managerRuntimeComponent;
-    }
-
-    @Override
-    public RemoteControllerRequest getRemoteControllerRequest() {
-        return remoteControllerRequest;
-    }
-
-    public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
-        return uncaughtExceptionHandler;
-    }
-
-    @Override
-    public void close() {
-        grpcClient.close();
-        grpcServer.close();
-    }
-
-    public static class Builder extends NetworkTransit.Builder {
-
-        private final byte nodeName;
-        private final int port;
-
+        public final byte nodeName;
+        public final int port;
+        private final List<RemoteNode> targets;
+        private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
         private byte[] fileCertChain;
         private byte[] filePrivateKey;
         private TrustManagerFactory trustStore;
-
-        private final List<RemoteNode> targets;
-
-        private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+        private final List<UpdateConnect> updateConnectListeners;
 
         public Builder(byte nodeName, int port, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
             this.nodeName = nodeName;
             this.port = port;
             this.targets = new ArrayList<>();
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+            this.updateConnectListeners = new CopyOnWriteArrayList<>();
         }
 
         public Builder addTarget(RemoteNode target) {
@@ -124,9 +52,21 @@ public class GrpcNetworkTransit extends NetworkTransit {
             return this;
         }
 
+        public Builder withListenerUpdateConnect(UpdateConnect updateConnect) {
+            updateConnectListeners.add(updateConnect);
+            return this;
+        }
 
-        public GrpcNetworkTransit build(TransportManager transportManager) {
-            return new GrpcNetworkTransit(this, transportManager, uncaughtExceptionHandler);
+        public List<RemoteNode> getTargets() {
+            return Collections.unmodifiableList(targets);
+        }
+
+        public List<UpdateConnect> getUpdateConnectListeners() {
+            return Collections.unmodifiableList(updateConnectListeners);
+        }
+
+        public GrpcNetworkTransitImpl build(TransportManager transportManager) {
+            return new GrpcNetworkTransitImpl(this, transportManager, fileCertChain, filePrivateKey, trustStore, uncaughtExceptionHandler);
         }
 
     }
