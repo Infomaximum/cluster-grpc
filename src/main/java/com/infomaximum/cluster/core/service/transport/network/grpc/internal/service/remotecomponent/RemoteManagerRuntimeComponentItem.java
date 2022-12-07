@@ -44,7 +44,7 @@ public class RemoteManagerRuntimeComponentItem {
         this.grpcClientItem = grpcNetworkTransit.grpcClient.getClient(node);
         this.asyncStub = PServiceRemoteManagerComponentGrpc.newStub(grpcClientItem.channel);
 
-        this.mLog = new MLogger(log, 60*1000/TIMEOUT_REPEAT_CONNECT);//Раз в 1 минуту
+        this.mLog = new MLogger(log, 60 * 1000 / TIMEOUT_REPEAT_CONNECT);//Раз в 1 минуту
 
         this.observerListenerRemoteComponents =
                 new StreamObserver<PRuntimeComponentInfoList>() {
@@ -92,6 +92,26 @@ public class RemoteManagerRuntimeComponentItem {
         this.components = Collections.emptyMap();
     }
 
+    private static boolean equals(Map<Integer, RuntimeComponentInfo> components1, Map<Integer, RuntimeComponentInfo> components2) {
+        if (components1.size() != components2.size()) return false;
+        for (Map.Entry<Integer, RuntimeComponentInfo> entry1 : components1.entrySet()) {
+            RuntimeComponentInfo component2 = components2.get(entry1.getKey());
+            if (component2 == null) {
+                return false;
+            }
+            if (!component2.uuid.equals(entry1.getValue().uuid)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String toString(Map<Integer, RuntimeComponentInfo> components) {
+        return components.entrySet().stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue().uuid)
+                .collect(Collectors.joining(", ", "[", "]"));
+    }
+
     private void reconnect() {
         asyncStub.listenerRemoteComponents(Empty.newBuilder().build(), observerListenerRemoteComponents);
     }
@@ -110,6 +130,16 @@ public class RemoteManagerRuntimeComponentItem {
 
     public Collection<RuntimeComponentInfo> getComponents() {
         return components.values();
+    }
+
+    public RuntimeComponentInfo get(int uniqueId) {
+        for (Map.Entry<Integer, RuntimeComponentInfo> entry : components.entrySet()) {
+            RuntimeComponentInfo runtimeComponentInfo = entry.getValue();
+            if (uniqueId == runtimeComponentInfo.uniqueId) {
+                return runtimeComponentInfo;
+            }
+        }
+        return null;
     }
 
     public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {
@@ -137,26 +167,6 @@ public class RemoteManagerRuntimeComponentItem {
             }
         }
         return items;
-    }
-
-    private static boolean equals(Map<Integer, RuntimeComponentInfo> components1, Map<Integer, RuntimeComponentInfo> components2) {
-        if (components1.size() != components2.size()) return false;
-        for (Map.Entry<Integer, RuntimeComponentInfo> entry1 : components1.entrySet()) {
-            RuntimeComponentInfo component2 = components2.get(entry1.getKey());
-            if (component2 == null) {
-                return false;
-            }
-            if (!component2.uuid.equals(entry1.getValue().uuid)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static String toString(Map<Integer, RuntimeComponentInfo> components) {
-        return components.entrySet().stream()
-                .map(entry -> entry.getKey() + ":" + entry.getValue().uuid)
-                .collect(Collectors.joining(", ", "[", "]"));
     }
 
 }

@@ -4,6 +4,7 @@ import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
 import com.infomaximum.cluster.core.remote.struct.RController;
 import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
+import com.infomaximum.cluster.utils.GlobalUniqueIdUtils;
 import com.infomaximum.cluster.utils.RandomUtil;
 
 import java.util.ArrayList;
@@ -38,6 +39,13 @@ public class RemoteManagerRuntimeComponent {
             components.addAll(entry.getValue().getComponents());
         }
         return components;
+    }
+
+    public RuntimeComponentInfo get(int uniqueId) {
+        byte node = GlobalUniqueIdUtils.getNode(uniqueId);
+        RemoteManagerRuntimeComponentItem remoteManagerRuntimeComponentItem = items.get(node);
+        if (remoteManagerRuntimeComponentItem == null) return null;
+        return remoteManagerRuntimeComponentItem.get(uniqueId);
     }
 
     public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {

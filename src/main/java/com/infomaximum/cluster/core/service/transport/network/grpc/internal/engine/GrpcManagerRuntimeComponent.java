@@ -6,6 +6,7 @@ import com.infomaximum.cluster.core.service.transport.network.ManagerRuntimeComp
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecomponent.RemoteManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;
+import com.infomaximum.cluster.utils.GlobalUniqueIdUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,6 @@ public class GrpcManagerRuntimeComponent implements ManagerRuntimeComponent {
     private final static Logger log = LoggerFactory.getLogger(GrpcManagerRuntimeComponent.class);
 
     private final byte currentNode;
-
     public final LocalManagerRuntimeComponent localManagerRuntimeComponent;
     private final RemoteManagerRuntimeComponent remoteManagerRuntimeComponent;
 
@@ -46,9 +46,19 @@ public class GrpcManagerRuntimeComponent implements ManagerRuntimeComponent {
     }
 
     @Override
+    public RuntimeComponentInfo get(int uniqueId) {
+        byte node = GlobalUniqueIdUtils.getNode(uniqueId);
+        if (node == currentNode) {
+            return localManagerRuntimeComponent.get(uniqueId);
+        } else {
+            return remoteManagerRuntimeComponent.get(uniqueId);
+        }
+    }
+
+    @Override
     public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {
         RuntimeComponentInfo runtimeComponentInfo = localManagerRuntimeComponent.find(uuid, remoteControllerClazz);
-        if (runtimeComponentInfo==null) {
+        if (runtimeComponentInfo == null) {
             runtimeComponentInfo = remoteManagerRuntimeComponent.find(uuid, remoteControllerClazz);
         }
         return runtimeComponentInfo;
