@@ -16,22 +16,24 @@ public class RemoteComponentUnavailableTest {
 
     @Test
     public void test() throws Exception {
-        try (Clusters clusters = new Clusters.Builder().build()) {
-            CustomComponent customComponent = clusters.getCluster2().getAnyLocalComponent(CustomComponent.class);
-            RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+        Clusters clusters = new Clusters.Builder().build();
 
-            String key = "ping";
-            String value = "pong";
-            rControllerMemory.set(key, value);
+        CustomComponent customComponent = clusters.getCluster2().getAnyLocalComponent(CustomComponent.class);
+        RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
 
-            //Останавливаем cluster1
-            clusters.getCluster1().close();
+        String key = "ping";
+        String value = "pong";
+        rControllerMemory.set(key, value);
 
-//TODO Дописать тест!!!
-//            Assertions.assertThrows(ClusterException.class,
-//                    ()->{
-//                        rControllerMemory.get(key);
-//                    });
-        }
+        //Останавливаем cluster1
+        clusters.getCluster1().close();
+
+        Assertions.assertThrows(ClusterException.class,
+                () -> {
+                    rControllerMemory.get(key);
+                });
+
+        //Останавливаем cluster2
+        clusters.getCluster2().close();
     }
 }
