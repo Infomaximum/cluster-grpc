@@ -7,7 +7,7 @@ import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.UpdateConnect;
-import com.infomaximum.cluster.test.component.custom.CustomComponent;
+import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import com.infomaximum.cluster.test.utils.ReaderResources;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 
@@ -18,16 +18,16 @@ public class Clusters implements AutoCloseable {
 
     public Clusters(NetworkTransit.Builder builderNetworkTransit1, NetworkTransit.Builder builderNetworkTransit2, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
         ExecutorUtil.executors.execute(() -> {
-            cluster1 = new Cluster.Builder()
+            cluster1 = new Cluster.Builder(uncaughtExceptionHandler)
                     .withNetworkTransport(builderNetworkTransit1)
                     .withComponentIfNotExist(new ComponentBuilder(MemoryComponent.class))
                     .build();
         });
 
         ExecutorUtil.executors.execute(() -> {
-            cluster2 = new Cluster.Builder()
+            cluster2 = new Cluster.Builder(uncaughtExceptionHandler)
                     .withNetworkTransport(builderNetworkTransit2)
-                    .withComponentIfNotExist(new ComponentBuilder(CustomComponent.class))
+                    .withComponentIfNotExist(new ComponentBuilder(Custom1Component.class))
                     .build();
         });
 

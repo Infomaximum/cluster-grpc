@@ -2,11 +2,11 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.pse
 
 import com.google.protobuf.ByteString;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
+import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransport;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteControllerRequestGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestArgument;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestResult;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.serialize.ObjectSerialize;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,28 +23,25 @@ public class PServiceRemoteControllerRequestImpl extends PServiceRemoteControlle
         this.uncaughtExceptionHandler = grpcServer.grpcNetworkTransit.getUncaughtExceptionHandler();
     }
 
-    @Override  //StreamObserver<ProfileDescriptorOuterClass.ProfileDescriptor> responseObserver
+    @Override
     public void request(PRemoteControllerRequestArgument request, StreamObserver<PRemoteControllerRequestResult> responseObserver) {
         try {
-
-            Object[] args = new Object[request.getArgsCount()];
-            for (int i = 0; i < args.length; i++) {
-                args[i] = ObjectSerialize.deserialize(request.getArgs(i).toByteArray(), uncaughtExceptionHandler);
+            byte[][] byteArgs = new byte[request.getArgsCount()][];
+            for (int i = 0; i < byteArgs.length; i++) {
+                byteArgs[i] = request.getArgs(i).toByteArray();
             }
+            ComponentExecutorTransport.Result result = transportManager.localRequest(
+                    request.getTargetComponentUniqueId(),
+                    request.getRControllerClassName(),
+                    request.getMethodName(),
+                    byteArgs
+            );
 
             PRemoteControllerRequestResult.Builder requestResultBuilder = PRemoteControllerRequestResult.newBuilder();
-            try {
-                Object result = transportManager.localRequest(
-                        request.getTargetComponentUniqueId(),
-                        request.getRControllerClassName(),
-                        request.getMethodName(),
-                        args
-                );
-
-                //TODO Потенциальный баг, если при сохранении результата произойдет ошибка, мы запишем эту ошибку в ответ, хотя надо упасть
-                requestResultBuilder.setResult(ByteString.copyFrom(ObjectSerialize.serialize(result, uncaughtExceptionHandler)));
-            } catch (Exception e) {
-                requestResultBuilder.setException(ByteString.copyFrom(ObjectSerialize.serialize(e, uncaughtExceptionHandler)));
+            if (result.exception() != null) {
+                requestResultBuilder.setException(ByteString.copyFrom(result.exception()));
+            } else {
+                requestResultBuilder.setResult(ByteString.copyFrom(result.value()));
             }
 
             synchronized (responseObserver) {

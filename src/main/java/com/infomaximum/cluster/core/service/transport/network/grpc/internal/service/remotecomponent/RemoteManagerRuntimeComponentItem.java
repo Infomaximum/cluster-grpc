@@ -123,7 +123,7 @@ public class RemoteManagerRuntimeComponentItem {
         }
 
         if (!equals(components, updateComponents)) {
-            log.info("Update remote components from node: {}, components: {}", grpcNetworkTransit.getNode(), node, toString(updateComponents));
+            log.info("Node: {}, update components from remote node: {}, components: {}", grpcNetworkTransit.getNode(), node, toString(updateComponents));
         }
         this.components = updateComponents;
     }

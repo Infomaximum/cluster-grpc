@@ -1,11 +1,7 @@
 package com.infomaximum.cluster.test.item;
 
-import com.google.common.collect.Lists;
-import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.UpdateConnect;
 import com.infomaximum.cluster.test.Clusters;
-import com.infomaximum.cluster.test.component.custom.CustomComponent;
-import com.infomaximum.cluster.test.component.custom.remote.RControllerCustom;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

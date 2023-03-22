@@ -1,17 +1,19 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller;
 
 import com.google.protobuf.ByteString;
+import com.infomaximum.cluster.core.remote.packer.RemotePackerObject;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.client.item.GrpcClientItem;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceRemoteControllerRequestGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestArgument;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PRemoteControllerRequestResult;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.serialize.ObjectSerialize;
 import com.infomaximum.cluster.exception.ExceptionBuilder;
+import com.infomaximum.cluster.struct.Component;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -20,6 +22,8 @@ public class GrpcRemoteControllerRequestItem {
     private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final byte targetNode;
+
+    private final RemotePackerObject remotePackerObject;
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
     private final GrpcClientItem grpcClientItem;
@@ -29,21 +33,23 @@ public class GrpcRemoteControllerRequestItem {
     public GrpcRemoteControllerRequestItem(GrpcNetworkTransitImpl grpcNetworkTransit, byte targetNode) {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.targetNode = targetNode;
+        this.remotePackerObject = grpcNetworkTransit.remotePackerObject;
         this.uncaughtExceptionHandler = grpcNetworkTransit.getUncaughtExceptionHandler();
 
         this.grpcClientItem = grpcNetworkTransit.grpcClient.getClient(targetNode);
         this.asyncStub = PServiceRemoteControllerRequestGrpc.newStub(grpcClientItem.channel);
     }
 
-    public Object transitRequest(int targetComponentUniqueId, String rControllerClassName, String methodName, Object[] args) throws Exception {
+    public Object transitRequest(Component sourceComponent, int targetComponentUniqueId, String rControllerClassName, Method method, Object[] args) throws Exception {
 
         PRemoteControllerRequestArgument.Builder builder = PRemoteControllerRequestArgument.newBuilder()
                 .setTargetComponentUniqueId(targetComponentUniqueId)
                 .setRControllerClassName(rControllerClassName)
-                .setMethodName(methodName);
+                .setMethodName(method.getName());
         if (args != null) {
-            for (Object arg : args) {
-                builder.addArgs(ByteString.copyFrom(ObjectSerialize.serialize(arg, uncaughtExceptionHandler)));
+            Class[] parameterTypes = method.getParameterTypes();
+            for(int i=0; i<parameterTypes.length; i++) {
+                builder.addArgs(ByteString.copyFrom(remotePackerObject.serialize(sourceComponent, parameterTypes[i], args[i])));
             }
         }
         PRemoteControllerRequestArgument requestArgument = builder.build();
@@ -57,10 +63,10 @@ public class GrpcRemoteControllerRequestItem {
                     public void onNext(PRemoteControllerRequestResult value) {
                         try {
                             if (!value.getException().isEmpty()) {
-                                Throwable throwable = (Throwable) ObjectSerialize.deserialize(value.getException().toByteArray(), uncaughtExceptionHandler);
+                                Throwable throwable = (Throwable) remotePackerObject.deserialize(sourceComponent, Throwable.class, value.getException().toByteArray());
                                 completableFuture.completeExceptionally(throwable);
                             } else {
-                                Object result = ObjectSerialize.deserialize(value.getResult().toByteArray(), uncaughtExceptionHandler);
+                                Object result = remotePackerObject.deserialize(sourceComponent, method.getReturnType(), value.getResult().toByteArray());
                                 completableFuture.complete(result);
                             }
                         } catch (Throwable e) {
@@ -77,9 +83,9 @@ public class GrpcRemoteControllerRequestItem {
 
                                 ExceptionBuilder exceptionBuilder = grpcNetworkTransit.transportManager.getExceptionBuilder();
                                 if (statusRuntimeException.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                                    finalException = exceptionBuilder.buildRemoteComponentUnavailableException(targetNode, targetComponentUniqueId, rControllerClassName, methodName, statusRuntimeException);
+                                    finalException = exceptionBuilder.buildRemoteComponentUnavailableException(targetNode, targetComponentUniqueId, rControllerClassName, method.getName(), statusRuntimeException);
                                 } else {
-                                    finalException = exceptionBuilder.buildTransitRequestException(targetNode, targetComponentUniqueId, rControllerClassName, methodName, statusRuntimeException);
+                                    finalException = exceptionBuilder.buildTransitRequestException(targetNode, targetComponentUniqueId, rControllerClassName, method.getName(), statusRuntimeException);
                                 }
                             }
                             completableFuture.completeExceptionally(finalException);

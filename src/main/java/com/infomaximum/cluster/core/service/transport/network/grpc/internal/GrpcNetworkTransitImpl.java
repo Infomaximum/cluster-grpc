@@ -11,6 +11,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engi
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.client.GrpcClient;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
+import com.infomaximum.cluster.core.remote.packer.RemotePackerObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,9 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
     private final static Logger log = LoggerFactory.getLogger(GrpcNetworkTransit.class);
 
     public final TransportManager transportManager;
+
+    public final RemotePackerObject remotePackerObject;
+
     public final List<RemoteNode> targets;
     public final GrpcClient grpcClient;
     private final byte nodeName;
@@ -36,6 +40,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     public GrpcNetworkTransitImpl(GrpcNetworkTransit.Builder builder, TransportManager transportManager, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
         this.transportManager = transportManager;
+        this.remotePackerObject = transportManager.getRemotePackerObject();
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
 
         this.nodeName = builder.nodeName;

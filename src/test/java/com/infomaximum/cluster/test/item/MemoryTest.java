@@ -3,7 +3,7 @@ package com.infomaximum.cluster.test.item;
 import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.component.memory.remote.RControllerMemory;
 import com.infomaximum.cluster.test.Clusters;
-import com.infomaximum.cluster.test.component.custom.CustomComponent;
+import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -19,8 +19,8 @@ public class MemoryTest {
     @Test
     public void test1() throws Exception {
         try (Clusters clusters = new Clusters.Builder().build()) {
-            CustomComponent customComponent = clusters.getCluster2().getAnyLocalComponent(CustomComponent.class);
-            RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+            Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
+            RControllerMemory rControllerMemory = custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
 
             String key = "ping";
             String value = "pong";

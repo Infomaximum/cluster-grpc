@@ -3,7 +3,7 @@ package com.infomaximum.cluster.test.item;
 import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.component.memory.remote.RControllerMemory;
 import com.infomaximum.cluster.test.Clusters;
-import com.infomaximum.cluster.test.component.custom.CustomComponent;
+import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -18,8 +18,8 @@ public class HttpsTest {
         try (Clusters clusters = new Clusters.Builder()
                 .withServerSSL("ssl/chain1.crt", "ssl/private1.key", Clusters.Builder.Item.CLUSTER1, Clusters.Builder.Item.CLUSTER2)
                 .build()) {
-            CustomComponent customComponent = clusters.getCluster2().getAnyLocalComponent(CustomComponent.class);
-            RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+            Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
+            RControllerMemory rControllerMemory = custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
 
             String key = "ping";
             String value = "pong";
@@ -38,10 +38,10 @@ public class HttpsTest {
                 .withServerSSL("ssl/chain1.crt", "ssl/private1.key", Clusters.Builder.Item.CLUSTER1)
                 .withServerSSL("ssl/chain2.crt", "ssl/private2.key", Clusters.Builder.Item.CLUSTER2)
                 .build()) {
-            CustomComponent customComponent = clusters.getCluster2().getAnyLocalComponent(CustomComponent.class);
+            Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
 
             Assertions.assertThrows(RuntimeException.class, () -> {
-                customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+                custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
             });
         }
     }
@@ -55,8 +55,8 @@ public class HttpsTest {
                 .withServerSSL("ssl/chain1.crt", "ssl/private1.key", "ssl/chain2.crt", Clusters.Builder.Item.CLUSTER1)
                 .withServerSSL("ssl/chain2.crt", "ssl/private2.key", "ssl/chain1.crt", Clusters.Builder.Item.CLUSTER2)
                 .build()) {
-            CustomComponent customComponent = clusters.getCluster2().getAnyLocalComponent(CustomComponent.class);
-            RControllerMemory rControllerMemory = customComponent.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+            Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
+            RControllerMemory rControllerMemory = custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
 
             String key = "ping";
             String value = "pong";
