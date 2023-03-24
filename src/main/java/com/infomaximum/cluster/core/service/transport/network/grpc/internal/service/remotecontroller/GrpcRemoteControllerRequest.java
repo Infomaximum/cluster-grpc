@@ -1,5 +1,6 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller;
 
+import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransport;
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
@@ -32,9 +33,9 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     }
 
     @Override
-    public Object request(Component sourceComponent, int targetComponentUniqueId, String rControllerClassName, Method method, Object[] args) throws Exception {
+    public ComponentExecutorTransport.Result request(Component sourceComponent, int targetComponentUniqueId, String rControllerClassName, int methodKey, byte[][] args) throws Exception {
         byte node = GlobalUniqueIdUtils.getNode(targetComponentUniqueId);
         GrpcRemoteControllerRequestItem controllerRequestItem = items.get(node);
-        return controllerRequestItem.transitRequest(sourceComponent, targetComponentUniqueId, rControllerClassName, method, args);
+        return controllerRequestItem.transitRequest(sourceComponent, targetComponentUniqueId, rControllerClassName, methodKey, args);
     }
 }

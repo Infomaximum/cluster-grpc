@@ -33,7 +33,7 @@ public class PServiceRemoteControllerRequestImpl extends PServiceRemoteControlle
             ComponentExecutorTransport.Result result = transportManager.localRequest(
                     request.getTargetComponentUniqueId(),
                     request.getRControllerClassName(),
-                    request.getMethodName(),
+                    request.getMethodKey(),
                     byteArgs
             );
 

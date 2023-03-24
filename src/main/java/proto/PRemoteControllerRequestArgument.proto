@@ -6,6 +6,6 @@ option java_multiple_files = true;
 message PRemoteControllerRequestArgument {
   int32 targetComponentUniqueId = 1;
   string rControllerClassName = 2;
-  string methodName = 3;
+  int32 methodKey = 3;
   repeated bytes args = 4;
 }
