@@ -113,7 +113,7 @@ jar {
 
 dependencies {
 
-    compileOnly 'com.infomaximum:cluster:1.1.6p3'
+    compileOnly 'com.infomaximum:cluster:1.1.6p6'
 //    compileOnly project(':cluster')
 
     implementation('io.grpc:grpc-netty-shaded:1.50.2'){

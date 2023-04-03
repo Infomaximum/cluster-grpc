@@ -17,9 +17,9 @@ public class ClusterInputStreamTest {
             MemoryComponent memoryComponent = clusters.getCluster1().getAnyLocalComponent(MemoryComponent.class);
             RControllerCustom1 rControllerCustom1 = memoryComponent.getRemotes().get(Custom1Component.class, RControllerCustom1.class);
 
-            //ClusterInputStream clusterInputStream = rControllerCustom1.getInputStream(10);
+            ClusterInputStream clusterInputStream = rControllerCustom1.getInputStream(10);
 
-            //byte[] result = clusterInputStream.readAllBytes();
+            byte[] result = clusterInputStream.readAllBytes();
         }
     }
 }

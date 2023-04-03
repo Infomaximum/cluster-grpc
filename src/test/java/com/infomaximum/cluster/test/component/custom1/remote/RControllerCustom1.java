@@ -4,7 +4,6 @@ import com.infomaximum.cluster.core.remote.struct.ClusterInputStream;
 import com.infomaximum.cluster.core.remote.struct.RController;
 
 public interface RControllerCustom1 extends RController {
-
     String empty();
     ClusterInputStream getInputStream(int size);
 }
