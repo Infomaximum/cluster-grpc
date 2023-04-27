@@ -142,7 +142,7 @@ public class RemoteManagerRuntimeComponentItem {
         return null;
     }
 
-    public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {
+    public RuntimeComponentInfo find(String uuid) {
         List<RuntimeComponentInfo> items = new ArrayList<>();
         for (Map.Entry<Integer, RuntimeComponentInfo> entry : components.entrySet()) {
             RuntimeComponentInfo runtimeComponentInfo = entry.getValue();

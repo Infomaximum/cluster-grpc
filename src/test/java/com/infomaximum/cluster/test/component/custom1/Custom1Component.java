@@ -10,8 +10,8 @@ import com.infomaximum.cluster.struct.Component;
 @Info(uuid = "com.infomaximum.cluster.test.component.custom1")
 public class Custom1Component extends Component {
 
-    public Custom1Component(Cluster cluster) {
-        super(cluster);
+    public Custom1Component() {
+        super();
     }
 
 }

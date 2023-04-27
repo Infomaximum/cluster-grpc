@@ -56,10 +56,10 @@ public class GrpcManagerRuntimeComponent implements ManagerRuntimeComponent {
     }
 
     @Override
-    public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {
-        RuntimeComponentInfo runtimeComponentInfo = localManagerRuntimeComponent.find(uuid, remoteControllerClazz);
+    public RuntimeComponentInfo find(String uuid) {
+        RuntimeComponentInfo runtimeComponentInfo = localManagerRuntimeComponent.find(uuid);
         if (runtimeComponentInfo == null) {
-            runtimeComponentInfo = remoteManagerRuntimeComponent.find(uuid, remoteControllerClazz);
+            runtimeComponentInfo = remoteManagerRuntimeComponent.find(uuid);
         }
         return runtimeComponentInfo;
     }

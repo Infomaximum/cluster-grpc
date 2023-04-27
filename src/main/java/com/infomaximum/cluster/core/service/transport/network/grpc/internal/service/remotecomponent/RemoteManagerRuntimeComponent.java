@@ -48,10 +48,10 @@ public class RemoteManagerRuntimeComponent {
         return remoteManagerRuntimeComponentItem.get(uniqueId);
     }
 
-    public RuntimeComponentInfo find(String uuid, Class<? extends RController> remoteControllerClazz) {
+    public RuntimeComponentInfo find(String uuid) {
         ArrayList<RuntimeComponentInfo> contenders = new ArrayList<>();
         for (Map.Entry<Byte, RemoteManagerRuntimeComponentItem> entry : items.entrySet()) {
-            RuntimeComponentInfo contender = entry.getValue().find(uuid, remoteControllerClazz);
+            RuntimeComponentInfo contender = entry.getValue().find(uuid);
             if (contender != null) {
                 contenders.add(contender);
             }
