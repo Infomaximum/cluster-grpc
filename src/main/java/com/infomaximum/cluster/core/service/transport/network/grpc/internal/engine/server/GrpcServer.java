@@ -2,8 +2,8 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.eng
 
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice.PServiceRemoteControllerRequestImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice.PServiceRemoteManagerComponentGrpcImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.pservice.PServiceExchangeImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
@@ -15,10 +15,12 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class GrpcServer implements AutoCloseable {
 
     public final GrpcNetworkTransitImpl grpcNetworkTransit;
+    private final Channels channels;
 
     private final int port;
 
@@ -28,22 +30,17 @@ public class GrpcServer implements AutoCloseable {
 
     private Server server;
 
-    private PServiceRemoteManagerComponentGrpcImpl serviceRemoteManagerComponent;
-
-    public GrpcServer(GrpcNetworkTransitImpl grpcNetworkTransit, int port, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
+    public GrpcServer(GrpcNetworkTransitImpl grpcNetworkTransit, Channels channels, int port, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
         this.grpcNetworkTransit = grpcNetworkTransit;
+        this.channels = channels;
         this.port = port;
 
         this.fileCertChain = fileCertChain;
         this.filePrivateKey = filePrivateKey;
         this.trustStore = trustStore;
-
-        start();
     }
 
-    private void start() {
-        this.serviceRemoteManagerComponent = new PServiceRemoteManagerComponentGrpcImpl(this);
-
+    public void start() {
         ServerBuilder serverBuilder;
         if (filePrivateKey != null) {
             SslContext sslContext;
@@ -65,8 +62,7 @@ public class GrpcServer implements AutoCloseable {
 
 
         serverBuilder
-                .addService(serviceRemoteManagerComponent)
-                .addService(new PServiceRemoteControllerRequestImpl(this));
+                .addService(new PServiceExchangeImpl(this, channels));
         try {
             server = serverBuilder.build().start();
         } catch (IOException e) {
@@ -76,10 +72,9 @@ public class GrpcServer implements AutoCloseable {
 
     @Override
     public void close() {
-        serviceRemoteManagerComponent.close();
         server.shutdown();
         try {
-            server.awaitTermination();
+            server.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
         }
     }

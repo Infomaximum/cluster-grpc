@@ -15,27 +15,23 @@ public interface GrpcNetworkTransit {
 
     class Builder extends NetworkTransit.Builder {
 
-        public final byte nodeName;
+        public final String nodeName;
         public final int port;
-        private final List<RemoteNode> targets;
+        private final List<GrpcRemoteNode> targets;
         private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
         private byte[] fileCertChain;
         private byte[] filePrivateKey;
         private TrustManagerFactory trustStore;
-        private final List<UpdateConnect> updateConnectListeners;
 
-        public Builder(byte nodeName, int port, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
+        public Builder(String nodeName, int port, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
             this.nodeName = nodeName;
             this.port = port;
             this.targets = new ArrayList<>();
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
-            this.updateConnectListeners = new CopyOnWriteArrayList<>();
         }
 
-        public Builder addTarget(RemoteNode target) {
-            if (target.name != nodeName) {
-                this.targets.add(target);
-            }
+        public Builder addTarget(GrpcRemoteNode target) {
+            this.targets.add(target);
             return this;
         }
 
@@ -52,17 +48,8 @@ public interface GrpcNetworkTransit {
             return this;
         }
 
-        public Builder withListenerUpdateConnect(UpdateConnect updateConnect) {
-            updateConnectListeners.add(updateConnect);
-            return this;
-        }
-
-        public List<RemoteNode> getTargets() {
+        public List<GrpcRemoteNode> getTargets() {
             return Collections.unmodifiableList(targets);
-        }
-
-        public List<UpdateConnect> getUpdateConnectListeners() {
-            return Collections.unmodifiableList(updateConnectListeners);
         }
 
         public GrpcNetworkTransitImpl build(TransportManager transportManager) {

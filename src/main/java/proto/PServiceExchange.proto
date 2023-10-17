@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.infomaximum.cluster.core.service.transport.network.grpc.pservice;
+
+import "PNetPackage.proto";
+
+service PServiceExchange {
+
+  rpc exchange (stream PNetPackage) returns (stream PNetPackage) {}
+
+}

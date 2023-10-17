@@ -63,7 +63,7 @@ public class CertificateUtils {
             } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException ignore) {
             }
 
-            //Предполагаем что беред нами обычный файл с сертификатами
+            //Предполагаем что перед нами обычный файл с сертификатами
             X509Certificate certificate;
             try {
                 certificate = build(trustCertificate);

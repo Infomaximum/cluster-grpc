@@ -1,15 +1,17 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal;
 
 import com.infomaximum.cluster.NetworkTransit;
+import com.infomaximum.cluster.Node;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.network.ManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
-import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
-import com.infomaximum.cluster.core.service.transport.network.grpc.UpdateConnect;
+import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcManagerRuntimeComponent;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.client.GrpcClient;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.notification.NotificationUpdateComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.remote.packer.RemotePackerObject;
 import org.slf4j.Logger;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
 import java.util.List;
+import java.util.Random;
 
 public class GrpcNetworkTransitImpl implements NetworkTransit {
 
@@ -24,41 +27,47 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     public final TransportManager transportManager;
 
+    private final GrpcNode node;
+
     public final RemotePackerObject remotePackerObject;
 
-    public final List<RemoteNode> targets;
-    public final GrpcClient grpcClient;
-    private final byte nodeName;
-    private final int port;
+    public final List<GrpcRemoteNode> targets;
     private final GrpcServer grpcServer;
     private final ManagerRuntimeComponent managerRuntimeComponent;
     private final RemoteControllerRequest remoteControllerRequest;
 
+    private final Channels channels;
+
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
-    private final List<UpdateConnect> listeners;
 
     public GrpcNetworkTransitImpl(GrpcNetworkTransit.Builder builder, TransportManager transportManager, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
         this.transportManager = transportManager;
         this.remotePackerObject = transportManager.getRemotePackerObject();
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
 
-        this.nodeName = builder.nodeName;
-        this.port = builder.port;
+        node = new GrpcNode.Builder(builder.port).withName(builder.nodeName).build();
+
         this.targets = builder.getTargets();
-        this.listeners = builder.getUpdateConnectListeners();
-
-        this.grpcClient = new GrpcClient(this, fileCertChain, filePrivateKey, trustStore);
-        this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this);
-
-        this.grpcServer = new GrpcServer(this, port, fileCertChain, filePrivateKey, trustStore);
 
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
+        this.channels = new Channels.Builder(this)
+                .withClient(targets, fileCertChain, filePrivateKey, trustStore)
+                .build();
+
+        this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this, channels);
+        new NotificationUpdateComponent(node, managerRuntimeComponent.getLocalManagerRuntimeComponent(), channels);
+
+        this.grpcServer = new GrpcServer(this, channels, builder.port, fileCertChain, filePrivateKey, trustStore);
     }
 
     @Override
-    public byte getNode() {
-        return nodeName;
+    public Node getNode() {
+        return node;
+    }
+
+    public Channels getChannels() {
+        return channels;
     }
 
     @Override
@@ -71,25 +80,25 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         return remoteControllerRequest;
     }
 
+    @Override
+    public List<Node> getRemoteNodes() {
+        return channels.getRemoteNodes();
+    }
+
+    @Override
+    public void start() {
+        this.channels.start();
+        this.grpcServer.start();
+    }
+
     public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
         return uncaughtExceptionHandler;
     }
 
-    public void fireEventOnConnect(byte source, byte target){
-        for (UpdateConnect listener: listeners) {
-            listener.onConnect(source, target);
-        }
-    }
-
-    public void fireEventOnDisconnect(byte source, byte target){
-        for (UpdateConnect listener: listeners) {
-            listener.onDisconnect(source, target);
-        }
-    }
 
     @Override
     public void close() {
-        grpcClient.close();
+        channels.close();
         grpcServer.close();
     }
 }

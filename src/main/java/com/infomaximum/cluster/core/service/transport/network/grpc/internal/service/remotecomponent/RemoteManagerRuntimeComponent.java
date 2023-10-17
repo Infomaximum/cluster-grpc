@@ -1,59 +1,28 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecomponent;
 
-import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
+import com.infomaximum.cluster.Node;
 import com.infomaximum.cluster.core.remote.struct.RController;
-import com.infomaximum.cluster.core.service.transport.network.grpc.RemoteNode;
+import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
-import com.infomaximum.cluster.utils.GlobalUniqueIdUtils;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
 import com.infomaximum.cluster.utils.RandomUtil;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class RemoteManagerRuntimeComponent {
 
-    private final GrpcNetworkTransitImpl grpcNetworkTransit;
+    private final Channels channels;
 
-    private final byte currentNode;
-    private final Map<Byte, RemoteManagerRuntimeComponentItem> items;
-
-    public RemoteManagerRuntimeComponent(GrpcNetworkTransitImpl grpcNetworkTransit) {
-        this.grpcNetworkTransit = grpcNetworkTransit;
-        this.currentNode = grpcNetworkTransit.getNode();
-        this.items = new HashMap<>();
-        for (RemoteNode remoteNode : grpcNetworkTransit.targets) {
-            if (currentNode == remoteNode.name) {
-                continue;
-            }
-            items.put(remoteNode.name, new RemoteManagerRuntimeComponentItem(
-                    grpcNetworkTransit, remoteNode.name
-            ));
-        }
+    public RemoteManagerRuntimeComponent(GrpcNetworkTransitImpl grpcNetworkTransit, Channels channels) {
+        this.channels = channels;
     }
 
-    public Collection<RuntimeComponentInfo> getComponents() {
-        ArrayList<RuntimeComponentInfo> components = new ArrayList<>();
-        for (Map.Entry<Byte, RemoteManagerRuntimeComponentItem> entry : items.entrySet()) {
-            components.addAll(entry.getValue().getComponents());
-        }
-        return components;
-    }
-
-    public RuntimeComponentInfo get(int uniqueId) {
-        byte node = GlobalUniqueIdUtils.getNode(uniqueId);
-        RemoteManagerRuntimeComponentItem remoteManagerRuntimeComponentItem = items.get(node);
-        if (remoteManagerRuntimeComponentItem == null) return null;
-        return remoteManagerRuntimeComponentItem.get(uniqueId);
-    }
-
-    public RuntimeComponentInfo find(String uuid) {
-        ArrayList<RuntimeComponentInfo> contenders = new ArrayList<>();
-        for (Map.Entry<Byte, RemoteManagerRuntimeComponentItem> entry : items.entrySet()) {
-            RuntimeComponentInfo contender = entry.getValue().find(uuid);
-            if (contender != null) {
-                contenders.add(contender);
+    public LocationRuntimeComponent find(String uuid) {
+        ArrayList<LocationRuntimeComponent> contenders = new ArrayList<>();
+        for(LocationRuntimeComponent runtimeComponentInfo: channels.getComponents()) {
+            if (runtimeComponentInfo.component().uuid.equals(uuid)) {
+                contenders.add(runtimeComponentInfo);
             }
         }
         if (contenders.isEmpty()) {
@@ -63,14 +32,27 @@ public class RemoteManagerRuntimeComponent {
         }
     }
 
-    public Collection<RuntimeComponentInfo> find(Class<? extends RController> remoteControllerClazz) {
-        ArrayList<RuntimeComponentInfo> components = new ArrayList<>();
-        for (Map.Entry<Byte, RemoteManagerRuntimeComponentItem> entry : items.entrySet()) {
-            Collection<RuntimeComponentInfo> items = entry.getValue().find(remoteControllerClazz);
-            if (items != null) {
-                components.addAll(items);
+    //TODO Не оптимально - лишние преобразования и поиск объектов
+    public Collection<LocationRuntimeComponent> find(Class<? extends RController> remoteControllerClazz) {
+        ArrayList<LocationRuntimeComponent> components = new ArrayList<>();
+        for(LocationRuntimeComponent runtimeComponentInfo: channels.getComponents()) {
+            if (runtimeComponentInfo.component().getClassNameRControllers().contains(remoteControllerClazz.getName())) {
+                components.add(runtimeComponentInfo);
             }
         }
         return components;
+    }
+
+    public LocationRuntimeComponent get(UUID nodeRuntimeId, int componentId) {
+        Channel channel = channels.getChannel(nodeRuntimeId);
+        if (channel == null) {
+            return null;
+        }
+        for(LocationRuntimeComponent runtimeComponentInfo: channel.getRemoteNode().getComponents()) {
+            if (runtimeComponentInfo.component().id==componentId) {
+                return runtimeComponentInfo;
+            }
+        }
+        return null;
     }
 }

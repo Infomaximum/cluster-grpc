@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option java_package = "com.infomaximum.cluster.core.service.transport.network.grpc.struct";
+option java_multiple_files = true;
+
+message PNetPackage  {
+  oneof impl {
+    PNetPackageHandshake handshake = 1;
+    PNetPackageRequest request = 2;
+    PNetPackageResponse response = 3;
+    PNetPackageUpdateNode updateNode = 4;
+  }
+}
+
+message PNetPackageHandshake  {
+  PNetPackageHandshakeNode node = 1;
+}
+
+message PNetPackageHandshakeNode  {
+  string name = 1;//node name
+  string runtimeId = 2;//node runtime unique id
+  repeated PNetPackageComponent pNetPackageComponents = 3;
+}
+
+message PNetPackageComponent  {
+  string uuid = 1;
+  int32 id = 2;
+  repeated string classNameRControllers = 3;
+}
+
+message PNetPackageUpdateNode  {
+  repeated PNetPackageComponent pNetPackageComponents = 1;
+}
+
+message PNetPackageRequest {
+  int32 packageId = 1;
+
+  int32 targetComponentId = 2;
+  string rControllerClassName = 3;
+  int32 methodKey = 4;
+  repeated bytes args = 5;
+}
+
+message PNetPackageResponse {
+  int32 packageId = 1;
+
+  bytes result = 2;
+  bytes exception = 3;
+}

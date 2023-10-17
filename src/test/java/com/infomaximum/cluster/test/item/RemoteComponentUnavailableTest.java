@@ -7,6 +7,8 @@ import com.infomaximum.cluster.test.Clusters;
 import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,9 +16,10 @@ public class RemoteComponentUnavailableTest {
 
     private final static Logger log = LoggerFactory.getLogger(MemoryTest.class);
 
-    @Test
-    public void test() throws Exception {
-        Clusters clusters = new Clusters.Builder().build();
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3, 4})
+    public void test(int modeId) throws Exception {
+        Clusters clusters = new Clusters.Builder(modeId).build();
 
         Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
         RControllerMemory rControllerMemory = custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
