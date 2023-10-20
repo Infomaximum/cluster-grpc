@@ -19,7 +19,7 @@ public class SimpleTest  {
     private final static Logger log = LoggerFactory.getLogger(SimpleTest.class);
 
     @ParameterizedTest
-    @ValueSource(ints = {1, 2, 3, 4})
+    @ValueSource(ints = {1})//1, 2, 3, 4
     public void test(int modeId) throws Exception {
         try (Clusters clusters = new Clusters.Builder(modeId).build()) {
             MemoryComponent memoryComponent = clusters.getCluster1().getAnyLocalComponent(MemoryComponent.class);

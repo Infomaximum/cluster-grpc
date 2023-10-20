@@ -1,7 +1,7 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel;
 
 import com.infomaximum.cluster.Node;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.client.Client;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.RandomUtils;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import org.slf4j.Logger;
@@ -14,10 +14,12 @@ public class ChannelList {
     private final static Logger log = LoggerFactory.getLogger(ChannelList.class);
 
     public final Channels channels;
+    private final GrpcRemoteControllerRequest remoteControllerRequest;
     private final Map<UUID, List<Channel>> channelItems;
 
-    public ChannelList(Channels channels) {
+    public ChannelList(Channels channels, GrpcRemoteControllerRequest remoteControllerRequest) {
         this.channels = channels;
+        this.remoteControllerRequest = remoteControllerRequest;
         this.channelItems = new HashMap<>();
     }
 
@@ -44,6 +46,8 @@ public class ChannelList {
             }
         }
 
+        log.debug("Add channel to: {}: {}, count: {}", remoteNode.getName(), remoteNode.getRuntimeId(), items.size());
+
         //Отправляем оповещение
         if (fireEvent) {
             channels.fireEventConnectNode(remoteNode);
@@ -65,6 +69,11 @@ public class ChannelList {
                 fireEvent = true;
             }
         }
+
+        log.debug("Remove channel to: {}: {}, count: {}", remoteNode.getName(), remoteNode.getRuntimeId(), items.size());
+
+        //Кидаем ошибку по всем ожидающим запросам
+        remoteControllerRequest.disconnectChannel(channel);
 
         //Отправляем оповещение
         if (fireEvent) {

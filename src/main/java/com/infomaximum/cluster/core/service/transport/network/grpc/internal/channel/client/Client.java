@@ -118,6 +118,7 @@ public class Client implements AutoCloseable {
                     @Override
                     public void onError(Throwable t) {
                         mLog.warn("Error connect to remote node: {}, exception: {}", remoteNode.target, t);
+                        destroyChannel();
 
                         ExecutorUtil.executors.execute(() -> {
                             try {
@@ -132,9 +133,10 @@ public class Client implements AutoCloseable {
                     @Override
                     public void onCompleted() {
                         log.warn("Completed connection with remote node: {}, repeat...", remoteNode.target);
+                        destroyChannel();
                         ExecutorUtil.executors.execute(() -> {
                             try {
-                                Thread.sleep(TIMEOUT_REPEAT_CONNECT * 2);
+                                Thread.sleep(TIMEOUT_REPEAT_CONNECT);
                             } catch (InterruptedException e) {
 
                             }
@@ -146,10 +148,7 @@ public class Client implements AutoCloseable {
 
     private void reconnect() {
         //Отзываем невалидный канал
-        if (clientChannel != null) {
-            channels.unRegisterChannel(clientChannel);
-            clientChannel = null;
-        }
+        destroyChannel();
 
         if (isClosed) return;
 
@@ -157,6 +156,13 @@ public class Client implements AutoCloseable {
         requestObserver = exchangeStub.exchange(responseObserver);
         PNetPackage packageHandshake = NetPackageHandshakeCreator.create(grpcNetworkTransit);
         requestObserver.onNext(packageHandshake);
+    }
+
+    private void destroyChannel() {
+        if (clientChannel != null) {
+            channels.unRegisterChannel(clientChannel);
+            clientChannel = null;
+        }
     }
 
     public void start() {

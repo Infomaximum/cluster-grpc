@@ -47,7 +47,7 @@ public class Clusters implements AutoCloseable {
         }
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

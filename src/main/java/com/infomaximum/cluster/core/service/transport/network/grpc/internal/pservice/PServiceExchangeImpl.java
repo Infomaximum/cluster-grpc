@@ -75,22 +75,23 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
             @Override
             public void onError(Throwable throwable) {
-                if (serverChannel[0] != null) {
-                    channels.unRegisterChannel(serverChannel[0]);
-                    serverChannel[0] = null;
-                }
+                destroyChannel(serverChannel);
                 log.error("onError", throwable);
             }
 
             @Override
             public void onCompleted() {
-                if (serverChannel[0] != null) {
-                    channels.unRegisterChannel(serverChannel[0]);
-                    serverChannel[0] = null;
-                }
+                destroyChannel(serverChannel);
                 log.error("onCompleted");
             }
         };
         return requestObserver;
+    }
+
+    private void destroyChannel(ChannelImpl[] serverChannel) {
+        if (serverChannel[0] != null) {
+            channels.unRegisterChannel(serverChannel[0]);
+            serverChannel[0] = null;
+        }
     }
 }

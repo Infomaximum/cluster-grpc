@@ -3,6 +3,7 @@ package com.infomaximum.cluster.test.component.custom1.remote;
 
 import com.infomaximum.cluster.core.remote.AbstractRController;
 import com.infomaximum.cluster.core.remote.struct.ClusterInputStream;
+import com.infomaximum.cluster.exception.ClusterException;
 import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 
 import java.io.IOException;
@@ -33,5 +34,15 @@ public class RControllerCustom1Impl extends AbstractRController<Custom1Component
                 return count[0]%255;
             }
         });
+    }
+
+    @Override
+    public String slowRequest(long time) throws ClusterException {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return "OK";
     }
 }

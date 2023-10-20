@@ -32,19 +32,17 @@ public class UpdateNodeConnectTest {
         List<String> events2 = listenerUpdateConnect2.getEvents();
         log.debug("events1: {}, events2: {}", events1, events2);
 
-        //Проверяем, что у всех есть событие появление удаленной ноды
+        //Проверяем, что у всех есть событие подключения удаленной ноды
         Assertions.assertTrue(events1.contains("c-node2"));
         Assertions.assertTrue(events2.contains("c-node1"));
 
-        //Проверяем, что ни у кого нет событие свой же ноды
-        Assertions.assertFalse(events1.contains("c-node1"));
-        Assertions.assertFalse(events1.contains("d-node1"));
-        Assertions.assertFalse(events2.contains("c-node2"));
-        Assertions.assertFalse(events2.contains("d-node2"));
+        //Проверяем, что у всех есть событие отключение удаленной ноды
+        Assertions.assertTrue(events1.contains("d-node2"));
+        Assertions.assertTrue(events2.contains("d-node1"));
 
         //Проверяем, что нет лишних событий
-        Assertions.assertTrue(events1.size() <= 2);
-        Assertions.assertTrue(events2.size() <= 2);
+        Assertions.assertTrue(events1.size() == 2);
+        Assertions.assertTrue(events2.size() == 2);
     }
 
     public class ListenerUpdateConnect implements UpdateNodeConnect {

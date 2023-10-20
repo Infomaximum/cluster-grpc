@@ -7,4 +7,5 @@ import com.infomaximum.cluster.exception.ClusterException;
 public interface RControllerCustom1 extends RController {
     String empty() throws ClusterException;
     ClusterInputStream getInputStream(int size) throws ClusterException;
+    String slowRequest(long time) throws ClusterException;
 }

@@ -7,6 +7,7 @@ import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeCom
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.client.Clients;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 
@@ -17,14 +18,14 @@ import java.util.UUID;
 
 public class Channels implements AutoCloseable {
 
-    private final TransportManager transportManager;
+    public final TransportManager transportManager;
     private final ChannelList channelList;
 
     private final Clients clients;
 
     private Channels(Builder builder) {
         this.transportManager = builder.grpcNetworkTransit.transportManager;
-        this.channelList = new ChannelList(this);
+        this.channelList = new ChannelList(this, (GrpcRemoteControllerRequest) builder.grpcNetworkTransit.getRemoteControllerRequest());
         this.clients = new Clients(
                 builder.grpcNetworkTransit, channelList,
                 builder.clientTargets, builder.clientFileCertChain, builder.clientFilePrivateKey, builder.clientTrustStore

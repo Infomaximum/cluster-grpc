@@ -24,7 +24,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final AtomicInteger ids;
-    private final ConcurrentHashMap<Integer, CompletableFuture<PNetPackageResponse>> requests;
+    private final ConcurrentHashMap<Integer, NetRequest> requests;
 
     public GrpcRemoteControllerRequest(GrpcNetworkTransitImpl grpcNetworkTransit) {
         this.grpcNetworkTransit = grpcNetworkTransit;
@@ -46,7 +46,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         int packageId = nextPackageId();
 
         CompletableFuture<PNetPackageResponse> completableFuture = new CompletableFuture<>();
-        requests.put(packageId, completableFuture);
+        requests.put(packageId, new NetRequest(channel, targetComponentId, rControllerClassName, methodKey, completableFuture));
 
         //Формируем пакет-запрос и его отправляем
         PNetPackageRequest.Builder builderPackageRequest = PNetPackageRequest.newBuilder()
@@ -72,8 +72,8 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     }
 
     public void handleIncomingPacket(PNetPackageResponse response) {
-        CompletableFuture<PNetPackageResponse> completableFuture = requests.remove(response.getPackageId());
-        completableFuture.complete(response);
+        NetRequest netRequest = requests.remove(response.getPackageId());
+        netRequest.completableFuture().complete(response);
     }
 
     public void handleIncomingPacket(PNetPackageRequest request, StreamObserver<PNetPackage> responseObserver) {
@@ -96,5 +96,27 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
             responseBuilder.setResult(ByteString.copyFrom(result.value()));
         }
         responseObserver.onNext(PNetPackage.newBuilder().setResponse(responseBuilder).build());
+    }
+
+    public void disconnectChannel(Channel channel) {
+        for (Map.Entry<Integer, NetRequest> entry : requests.entrySet()) {
+            NetRequest netRequest = entry.getValue();
+            if (netRequest.channel() == channel) {
+                int packageId = entry.getKey();
+                requests.remove(packageId);
+
+                Exception exception = grpcNetworkTransit.transportManager.getExceptionBuilder().buildTransitRequestException(
+                        channel.getRemoteNode().node.getRuntimeId(), netRequest.componentId(), netRequest.rControllerClassName(), netRequest.methodKey(), null
+                );
+
+                PNetPackageResponse pNetPackageResponse = PNetPackageResponse.newBuilder()
+                        .setPackageId(packageId)
+                        .setException(ByteString.copyFrom(
+                                grpcNetworkTransit.transportManager.getRemotePackerObject().serialize(null, Throwable.class, exception)
+                        )).build();
+
+                netRequest.completableFuture().complete(pNetPackageResponse);
+            }
+        }
     }
 }
