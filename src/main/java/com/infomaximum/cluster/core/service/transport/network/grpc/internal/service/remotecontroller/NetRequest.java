@@ -5,5 +5,15 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPa
 
 import java.util.concurrent.CompletableFuture;
 
-public record NetRequest(Channel channel, int componentId, String rControllerClassName, int methodKey, CompletableFuture<PNetPackageResponse> completableFuture) {
+public record NetRequest(Channel channel, int componentId, String rControllerClassName, int methodKey, Timeout timeout, CompletableFuture<PNetPackageResponse> completableFuture) {
+}
+
+class Timeout {
+
+    public long timeFail;
+
+    public Timeout(long timeFail) {
+        this.timeFail = timeFail;
+    }
+
 }

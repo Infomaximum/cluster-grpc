@@ -12,6 +12,8 @@ import com.infomaximum.cluster.test.utils.FinderFreeHostPort;
 import com.infomaximum.cluster.test.utils.ReaderResources;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 
+import java.time.Duration;
+
 public class Clusters implements AutoCloseable {
 
     private Cluster cluster1;
@@ -97,6 +99,10 @@ public class Clusters implements AutoCloseable {
         private UpdateNodeConnect updateNodeConnect1;
         private UpdateNodeConnect updateNodeConnect2;
 
+        private Duration timeoutConfirmationWaitResponse1;
+
+        private Duration timeoutConfirmationWaitResponse2;
+
         public Builder(int communicationModeId) {
             this(CommunicationMode.get(communicationModeId));
         }
@@ -181,7 +187,19 @@ public class Clusters implements AutoCloseable {
             return this;
         }
 
+        public Builder withTimeoutConfirmationWaitResponse(Duration timeoutConfirmationWaitResponse1, Duration timeoutConfirmationWaitResponse2) {
+            this.timeoutConfirmationWaitResponse1 = timeoutConfirmationWaitResponse1;
+            this.timeoutConfirmationWaitResponse2 = timeoutConfirmationWaitResponse2;
+            return this;
+        }
+
         public Clusters build() {
+            if (timeoutConfirmationWaitResponse1 != null) {
+                builderNetworkTransit1.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse1);
+            }
+            if (timeoutConfirmationWaitResponse2 != null) {
+                builderNetworkTransit2.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse2);
+            }
             return new Clusters(builderNetworkTransit1, updateNodeConnect1, builderNetworkTransit2, updateNodeConnect2, uncaughtExceptionHandler);
         }
 

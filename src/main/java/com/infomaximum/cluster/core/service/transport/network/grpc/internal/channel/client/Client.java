@@ -103,6 +103,8 @@ public class Client implements AutoCloseable {
                                 remoteControllerRequest.handleIncomingPacket(netPackage.getRequest(), requestObserver);
                             } else if (clientChannel != null && netPackage.hasResponse()) {//Пришел ответ
                                 remoteControllerRequest.handleIncomingPacket(netPackage.getResponse());
+                            } else if (clientChannel != null && netPackage.hasResponseProcessing()) {
+                                remoteControllerRequest.handleIncomingPacket(netPackage.getResponseProcessing());
                             } else if (clientChannel != null && netPackage.hasUpdateNode()) {
                                 clientChannel.handleIncomingPacket(netPackage.getUpdateNode());
                             } else {

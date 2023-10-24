@@ -6,6 +6,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.Grpc
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.CertificateUtils;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,9 +16,14 @@ public interface GrpcNetworkTransit {
 
     class Builder extends NetworkTransit.Builder {
 
+        private static Duration DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE = Duration.ofSeconds(10);
+
         public final String nodeName;
         public final int port;
         private final List<GrpcRemoteNode> targets;
+
+        private Duration timeoutConfirmationWaitResponse;
+
         private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
         private byte[] fileCertChain;
         private byte[] filePrivateKey;
@@ -27,6 +33,7 @@ public interface GrpcNetworkTransit {
             this.nodeName = nodeName;
             this.port = port;
             this.targets = new ArrayList<>();
+            this.timeoutConfirmationWaitResponse = DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE;
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         }
 
@@ -48,8 +55,17 @@ public interface GrpcNetworkTransit {
             return this;
         }
 
+        public Builder withTimeoutConfirmationWaitResponse(Duration value) {
+            this.timeoutConfirmationWaitResponse = value;
+            return this;
+        }
+
         public List<GrpcRemoteNode> getTargets() {
             return Collections.unmodifiableList(targets);
+        }
+
+        public Duration getTimeoutConfirmationWaitResponse() {
+            return timeoutConfirmationWaitResponse;
         }
 
         public GrpcNetworkTransitImpl build(TransportManager transportManager) {

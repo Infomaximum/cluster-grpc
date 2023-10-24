@@ -8,7 +8,8 @@ message PNetPackage  {
     PNetPackageHandshake handshake = 1;
     PNetPackageRequest request = 2;
     PNetPackageResponse response = 3;
-    PNetPackageUpdateNode updateNode = 4;
+    PNetPackageProcessing responseProcessing = 4;
+    PNetPackageUpdateNode updateNode = 5;
   }
 }
 
@@ -46,4 +47,8 @@ message PNetPackageResponse {
 
   bytes result = 2;
   bytes exception = 3;
+}
+
+message PNetPackageProcessing {
+  int32 packageId = 1;
 }

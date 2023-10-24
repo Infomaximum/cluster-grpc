@@ -18,8 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.time.Duration;
 import java.util.List;
-import java.util.Random;
 
 public class GrpcNetworkTransitImpl implements NetworkTransit {
 
@@ -34,9 +34,11 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
     public final List<GrpcRemoteNode> targets;
     private final GrpcServer grpcServer;
     private final ManagerRuntimeComponent managerRuntimeComponent;
-    private final RemoteControllerRequest remoteControllerRequest;
+    private final GrpcRemoteControllerRequest remoteControllerRequest;
 
     private final Channels channels;
+
+    private final Duration timeoutConfirmationWaitResponse;
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -49,6 +51,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         node = new GrpcNode.Builder(builder.port).withName(builder.nodeName).build();
 
         this.targets = builder.getTargets();
+        this.timeoutConfirmationWaitResponse = builder.getTimeoutConfirmationWaitResponse();
 
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
         this.channels = new Channels.Builder(this)
@@ -85,6 +88,10 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         return channels.getRemoteNodes();
     }
 
+    public Duration getTimeoutConfirmationWaitResponse() {
+        return timeoutConfirmationWaitResponse;
+    }
+
     @Override
     public void start() {
         this.channels.start();
@@ -98,6 +105,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     @Override
     public void close() {
+        remoteControllerRequest.close();
         channels.close();
         grpcServer.close();
     }
