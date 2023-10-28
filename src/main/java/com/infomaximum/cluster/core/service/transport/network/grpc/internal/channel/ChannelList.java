@@ -55,6 +55,8 @@ public class ChannelList {
     }
 
     public void removeChannel(Channel channel) {
+        ((ChannelImpl) channel).destroy();
+
         Node remoteNode = channel.getRemoteNode().node;
 
         UUID remoteNodeRuntimeId = remoteNode.getRuntimeId();
@@ -87,12 +89,27 @@ public class ChannelList {
         synchronized (items) {
             int size = items.size();
             if (size == 0) return null;
-            return items.get(RandomUtils.random.nextInt(size));
+
+            int index = new Random().nextInt(size);
+            Channel result = null;
+            int i = 0;
+            for (Channel channel : items) {
+                if (!channel.isAvailable()) continue;
+                result = channel;
+                if (i++ == index) break;
+            }
+            return result;
         }
     }
 
     public Set<UUID> getNodes() {
-        return channelItems.keySet();
+        HashSet<UUID> nodes = new HashSet<>();
+        for (Map.Entry<UUID, List<Channel>> entry : channelItems.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                nodes.add(entry.getKey());
+            }
+        }
+        return nodes;
     }
 
     public List<Node> getRemoteNodes() {
@@ -110,16 +127,15 @@ public class ChannelList {
     public void sendBroadcast(PNetPackage netPackage) {
         for (List<Channel> iChannels : channelItems.values()) {
             for (Channel channel : iChannels) {
-                if (channel.isAvailable()) {
-                    ChannelImpl channelImpl = (ChannelImpl) channel;
-                    try {
-                        channelImpl.sent(netPackage);
-                    } catch (Exception e) {
-                        log.error("Error send broadcast", e);
-                    }
+                if (!channel.isAvailable()) continue;
+
+                ChannelImpl channelImpl = (ChannelImpl) channel;
+                try {
+                    channelImpl.sent(netPackage);
+                } catch (Exception e) {
+                    log.error("Error send broadcast", e);
                 }
             }
         }
-
     }
 }

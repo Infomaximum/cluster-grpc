@@ -14,9 +14,12 @@ public class ChannelImpl implements Channel {
     public final RNode remoteNode;
     private final StreamObserver<PNetPackage> requestObserver;
 
+    private volatile boolean available;
+
     ChannelImpl(RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
         this.remoteNode = remoteNode;
         this.requestObserver = requestObserver;
+        this.available = true;
     }
 
     @Override
@@ -26,7 +29,7 @@ public class ChannelImpl implements Channel {
 
     @Override
     public boolean isAvailable() {
-        return true;
+        return available;
     }
 
     public void handleIncomingPacket(PNetPackageUpdateNode value){
@@ -38,4 +41,7 @@ public class ChannelImpl implements Channel {
         requestObserver.onNext(value);
     }
 
+    public void destroy(){
+        available = false;
+    }
 }

@@ -17,7 +17,7 @@ public class FailRequestFromDisconnectTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
-    public void test(int modeId) throws Exception {
+    public void test1(int modeId) throws Exception {
         Clusters clusters = new Clusters.Builder(modeId).build();
 
         MemoryComponent memoryComponent = clusters.getCluster1().getAnyLocalComponent(MemoryComponent.class);
@@ -51,6 +51,31 @@ public class FailRequestFromDisconnectTest {
         Assertions.assertTrue(isOk.get());
 
         //Останавливаем cluster1
+        clusters.getCluster1().close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3, 4})
+    public void test2(int modeId) throws Exception {
+        Clusters clusters = new Clusters.Builder(modeId).build();
+
+        MemoryComponent memoryComponent = clusters.getCluster1().getAnyLocalComponent(MemoryComponent.class);
+        RControllerCustom1 rControllerCustom1 = memoryComponent.getRemotes().get(Custom1Component.class, RControllerCustom1.class);
+
+        String response1 = rControllerCustom1.empty();
+        Assertions.assertEquals(null, response1);
+
+        //Останавливаем cluster2
+        clusters.getCluster2().close();
+
+        Thread.sleep(1000);
+
+        Assertions.assertThrows(ClusterException.class,
+                () -> {
+                    rControllerCustom1.empty();
+                });
+
+         //Останавливаем cluster1
         clusters.getCluster1().close();
     }
 }

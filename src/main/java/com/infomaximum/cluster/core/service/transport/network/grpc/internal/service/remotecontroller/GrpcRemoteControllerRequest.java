@@ -8,9 +8,12 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.Grpc
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.notification.NotificationUpdateComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.struct.Component;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +22,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
+
+    private final static Logger log = LoggerFactory.getLogger(GrpcRemoteControllerRequest.class);
 
     private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
@@ -49,16 +54,22 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     @Override
     public ComponentExecutorTransport.Result request(Component sourceComponent, UUID targetNodeRuntimeId, int targetComponentId, String rControllerClassName, int methodKey, byte[][] args) throws Exception {
-        ChannelImpl channel = (ChannelImpl) grpcNetworkTransit.getChannels().getChannel(targetNodeRuntimeId);
-        if (channel == null) {
-            throw grpcNetworkTransit.transportManager.getExceptionBuilder().buildRemoteComponentUnavailableException(targetNodeRuntimeId, targetComponentId, rControllerClassName, methodKey, null);
-        }
-
         int packageId = nextPackageId();
-
         CompletableFuture<PNetPackageResponse> completableFuture = new CompletableFuture<>();
-        long timeFailRequest = countTimeFail();
-        requests.put(packageId, new NetRequest(channel, targetComponentId, rControllerClassName, methodKey, new Timeout(timeFailRequest), completableFuture));
+
+        //Пробуем найти действующий канал
+        ChannelImpl channel;
+        while (true) {
+            channel = (ChannelImpl) grpcNetworkTransit.getChannels().getChannel(targetNodeRuntimeId);
+            if (channel == null) {
+                requests.remove(packageId);
+                throw grpcNetworkTransit.transportManager.getExceptionBuilder().buildRemoteComponentUnavailableException(targetNodeRuntimeId, targetComponentId, rControllerClassName, methodKey, null);
+            }
+            requests.put(packageId, new NetRequest(channel, targetComponentId, rControllerClassName, methodKey, new Timeout(countTimeFail()), completableFuture));
+            if (channel.isAvailable()) {
+                break;
+            }
+        }
 
         //Формируем пакет-запрос и его отправляем
         PNetPackageRequest.Builder builderPackageRequest = PNetPackageRequest.newBuilder()
@@ -135,14 +146,26 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     private void checkTimeoutRequest() {
         try {
+            log.debug("checkTimeoutRequest start");
             long now = System.currentTimeMillis();
             for (Map.Entry<Integer, NetRequest> entry : requests.entrySet()) {
                 NetRequest netRequest = entry.getValue();
                 if (now > netRequest.timeout().timeFail) {
+                    log.debug("checkTimeoutRequest fireErrorNetworkRequest: nodeRuntimeId: {}, isAvailable: {}",
+                            netRequest.channel().getRemoteNode().node.getRuntimeId(),
+                            netRequest.channel().isAvailable()
+                    );
                     int packageId = entry.getKey();
                     fireErrorNetworkRequest(packageId);
+                } else {
+                    log.debug("checkTimeoutRequest wait: nodeRuntimeId: {}, isAvailable: {}, lastTime: {}",
+                            netRequest.channel().getRemoteNode().node.getRuntimeId(),
+                            netRequest.channel().isAvailable(),
+                            netRequest.timeout().timeFail - now
+                    );
                 }
             }
+            log.debug("checkTimeoutRequest end");
         } catch (Throwable e) {
             grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
         }
@@ -150,6 +173,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     private void fireErrorNetworkRequest(int packageId){
         NetRequest netRequest = requests.remove(packageId);
+        if (netRequest == null) return;
 
         Exception exception = grpcNetworkTransit.transportManager.getExceptionBuilder().buildTransitRequestException(
                 netRequest.channel().getRemoteNode().node.getRuntimeId(), netRequest.componentId(), netRequest.rControllerClassName(), netRequest.methodKey(), null
