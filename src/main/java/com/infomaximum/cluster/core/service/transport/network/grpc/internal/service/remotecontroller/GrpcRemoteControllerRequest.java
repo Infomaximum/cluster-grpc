@@ -91,12 +91,20 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     public void handleIncomingPacket(PNetPackageResponse response) {
         NetRequest netRequest = requests.remove(response.getPackageId());
-        netRequest.completableFuture().complete(response);
+        if (netRequest == null) {
+            log.debug("Incoming unknown response packageId: {}", response.getPackageId());
+        } else {
+            netRequest.completableFuture().complete(response);
+        }
     }
 
     public void handleIncomingPacket(PNetPackageProcessing response) {
         NetRequest netRequest = requests.get(response.getPackageId());
-        netRequest.timeout().timeFail = countTimeFail();
+        if (netRequest == null) {
+            log.debug("Incoming unknown processing packageId: {}", response.getPackageId());
+        } else {
+            netRequest.timeout().timeFail = countTimeFail();
+        }
     }
 
     private long countTimeFail(){
