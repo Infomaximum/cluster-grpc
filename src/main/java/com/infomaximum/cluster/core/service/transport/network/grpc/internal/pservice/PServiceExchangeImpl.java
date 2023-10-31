@@ -77,14 +77,22 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
             @Override
             public void onError(Throwable throwable) {
-                destroyChannel(serverChannel);
-                log.error("onError", throwable);
+                try {
+                    destroyChannel(serverChannel);
+                    log.error("onError", throwable);
+                } catch (Throwable t) {
+                    uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
+                }
             }
 
             @Override
             public void onCompleted() {
-                destroyChannel(serverChannel);
-                log.error("onCompleted");
+                try {
+                    destroyChannel(serverChannel);
+                    log.error("onCompleted");
+                } catch (Throwable t) {
+                    uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
+                }
             }
         };
         return requestObserver;

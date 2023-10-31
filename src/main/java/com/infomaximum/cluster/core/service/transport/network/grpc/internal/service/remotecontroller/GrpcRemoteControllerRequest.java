@@ -3,19 +3,14 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.ser
 import com.google.protobuf.ByteString;
 import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransport;
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
-import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.notification.NotificationUpdateComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.struct.Component;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -146,32 +141,20 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     private void checkTimeoutRequest() {
         try {
-            log.debug("checkTimeoutRequest start");
             long now = System.currentTimeMillis();
             for (Map.Entry<Integer, NetRequest> entry : requests.entrySet()) {
                 NetRequest netRequest = entry.getValue();
                 if (now > netRequest.timeout().timeFail) {
-                    log.debug("checkTimeoutRequest fireErrorNetworkRequest: nodeRuntimeId: {}, isAvailable: {}",
-                            netRequest.channel().getRemoteNode().node.getRuntimeId(),
-                            netRequest.channel().isAvailable()
-                    );
                     int packageId = entry.getKey();
                     fireErrorNetworkRequest(packageId);
-                } else {
-                    log.debug("checkTimeoutRequest wait: nodeRuntimeId: {}, isAvailable: {}, lastTime: {}",
-                            netRequest.channel().getRemoteNode().node.getRuntimeId(),
-                            netRequest.channel().isAvailable(),
-                            netRequest.timeout().timeFail - now
-                    );
                 }
             }
-            log.debug("checkTimeoutRequest end");
         } catch (Throwable e) {
             grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
         }
     }
 
-    private void fireErrorNetworkRequest(int packageId){
+    private void fireErrorNetworkRequest(int packageId) {
         NetRequest netRequest = requests.remove(packageId);
         if (netRequest == null) return;
 

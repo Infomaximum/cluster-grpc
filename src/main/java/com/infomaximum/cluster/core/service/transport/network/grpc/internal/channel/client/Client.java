@@ -119,31 +119,40 @@ public class Client implements AutoCloseable {
 
                     @Override
                     public void onError(Throwable t) {
-                        mLog.warn("Error connect to remote node: {}, exception: {}", remoteNode.target, t);
-                        destroyChannel();
+                        try {
+                            mLog.warn("Error connect to remote node: {}, exception: {}", remoteNode.target, t);
+                            destroyChannel();
 
-                        ExecutorUtil.executors.execute(() -> {
-                            try {
-                                Thread.sleep(TIMEOUT_REPEAT_CONNECT);
-                            } catch (InterruptedException e) {
-
-                            }
-                            reconnect();
-                        });
+                            ExecutorUtil.executors.execute(() -> {
+                                try {
+                                    Thread.sleep(TIMEOUT_REPEAT_CONNECT);
+                                    reconnect();
+                                } catch (Throwable e) {
+                                    grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+                                }
+                            });
+                        } catch (Throwable te) {
+                            grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), te);
+                        }
                     }
 
                     @Override
                     public void onCompleted() {
-                        log.warn("Completed connection with remote node: {}, repeat...", remoteNode.target);
-                        destroyChannel();
-                        ExecutorUtil.executors.execute(() -> {
-                            try {
-                                Thread.sleep(TIMEOUT_REPEAT_CONNECT);
-                            } catch (InterruptedException e) {
+                        try {
+                            log.warn("Completed connection with remote node: {}, repeat...", remoteNode.target);
+                            destroyChannel();
 
-                            }
-                            reconnect();
-                        });
+                            ExecutorUtil.executors.execute(() -> {
+                                try {
+                                    Thread.sleep(TIMEOUT_REPEAT_CONNECT);
+                                    reconnect();
+                                } catch (Throwable e) {
+                                    grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+                                }
+                            });
+                        } catch (Throwable te) {
+                            grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), te);
+                        }
                     }
                 };
     }
