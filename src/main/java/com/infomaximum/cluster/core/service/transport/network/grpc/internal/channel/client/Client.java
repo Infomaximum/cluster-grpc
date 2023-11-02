@@ -4,16 +4,13 @@ import com.infomaximum.cluster.Node;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.*;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.MLogger;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.utils.ExecutorUtil;
-import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -82,7 +79,7 @@ public class Client implements AutoCloseable {
                     public void onNext(PNetPackage netPackage) {
                         try {
                             if (clientChannel == null && netPackage.hasHandshake()) {
-                                clientChannel = (ChannelImpl) new Channel.Builder(requestObserver, netPackage.getHandshake()).build();
+                                clientChannel = new ChannelClient.Builder(requestObserver, netPackage.getHandshake()).build();
 
                                 //Проверяем, что не подключились к себе же
                                 Node currentNode = grpcNetworkTransit.getNode();

@@ -9,14 +9,14 @@ import io.grpc.stub.StreamObserver;
 
 import java.util.List;
 
-public class ChannelImpl implements Channel {
+public abstract class ChannelImpl implements Channel {
 
     public final RNode remoteNode;
-    private final StreamObserver<PNetPackage> requestObserver;
+    protected final StreamObserver<PNetPackage> requestObserver;
 
     private volatile boolean available;
 
-    ChannelImpl(RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
+    protected ChannelImpl(RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
         this.remoteNode = remoteNode;
         this.requestObserver = requestObserver;
         this.available = true;

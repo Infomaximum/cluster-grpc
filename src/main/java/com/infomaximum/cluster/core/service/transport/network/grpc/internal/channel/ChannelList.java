@@ -46,7 +46,7 @@ public class ChannelList {
             }
         }
 
-        log.debug("Add channel to: {}: {}, total: {}", remoteNode.getName(), remoteNode.getRuntimeId(), items.size());
+        log.debug("Add channel to: {}({}), type: {}, total: {}", remoteNode.getName(), remoteNode.getRuntimeId(), channel.getType(), items.size());
 
         //Отправляем оповещение
         if (fireEvent) {
@@ -72,7 +72,7 @@ public class ChannelList {
             }
         }
 
-        log.debug("Remove channel to: {}: {}, total: {}", remoteNode.getName(), remoteNode.getRuntimeId(), items.size());
+        log.debug("Remove channel to: {}({}), type: {}, total: {}", remoteNode.getName(), remoteNode.getRuntimeId(), channel.getType(), items.size());
 
         //Кидаем ошибку по всем ожидающим запросам
         remoteControllerRequest.disconnectChannel(channel);

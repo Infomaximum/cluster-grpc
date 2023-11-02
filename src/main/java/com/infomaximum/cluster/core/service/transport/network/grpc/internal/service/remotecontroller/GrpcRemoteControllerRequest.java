@@ -152,7 +152,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
             long now = System.currentTimeMillis();
             for (Map.Entry<Integer, NetRequest> entry : requests.entrySet()) {
                 NetRequest netRequest = entry.getValue();
-                if (now > netRequest.timeout().timeFail) {
+                if (!netRequest.channel().isAvailable() || now > netRequest.timeout().timeFail) {
                     int packageId = entry.getKey();
                     fireErrorNetworkRequest(packageId);
                 }

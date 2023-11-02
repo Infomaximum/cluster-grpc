@@ -3,8 +3,8 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.pse
 import com.infomaximum.cluster.Node;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
@@ -46,7 +46,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
                         PNetPackage answerHandshake = NetPackageHandshakeCreator.create((GrpcNetworkTransitImpl) transportManager.networkTransit);
                         responseObserver.onNext(answerHandshake);
 
-                        serverChannel[0] = (ChannelImpl) new Channel.Builder(responseObserver, requestPackage.getHandshake()).build();
+                        serverChannel[0] = new ChannelServer.Builder(responseObserver, requestPackage.getHandshake()).build();
 
                         Node currentNode = transportManager.cluster.node;
                         Node channelRemoteNode = serverChannel[0].remoteNode.node;

@@ -11,19 +11,6 @@ public interface Channel {
 
     boolean isAvailable();
 
-    public static class Builder{
+    ChannelType getType();
 
-        private final StreamObserver<PNetPackage> requestObserver;
-        private final PNetPackageHandshake remotePackageHandshake;
-
-        public Builder(StreamObserver<PNetPackage> requestObserver, PNetPackageHandshake remotePackageHandshake) {
-            this.requestObserver = requestObserver;
-            this.remotePackageHandshake = remotePackageHandshake;
-        }
-
-        public Channel build(){
-            RNode remoteNode = ConvertProto.convert(remotePackageHandshake.getNode());
-            return new ChannelImpl(remoteNode, requestObserver);
-        }
-    }
 }
