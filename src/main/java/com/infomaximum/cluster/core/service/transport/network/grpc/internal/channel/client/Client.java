@@ -8,6 +8,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.chan
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.MLogger;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.utils.ExecutorUtil;
@@ -78,6 +79,10 @@ public class Client implements AutoCloseable {
                     @Override
                     public void onNext(PNetPackage netPackage) {
                         try {
+                            if (clientChannel != null && log.isTraceEnabled()) {
+                                log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(netPackage), clientChannel);
+                            }
+
                             if (clientChannel == null && netPackage.hasHandshake()) {
                                 clientChannel = new ChannelClient.Builder(requestObserver, netPackage.getHandshake()).build();
 
@@ -93,11 +98,15 @@ public class Client implements AutoCloseable {
 
                                 channels.registerChannel(clientChannel);
 
+                                if (log.isTraceEnabled()) {
+                                    log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(netPackage), clientChannel);
+                                }
+
                                 //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
                                 PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
                                 requestObserver.onNext(netPackageUpdateNode);
                             } else if (clientChannel != null && netPackage.hasRequest()) {//Пришел запрос
-                                remoteControllerRequest.handleIncomingPacket(netPackage.getRequest(), requestObserver);
+                                remoteControllerRequest.handleIncomingPacket(netPackage.getRequest(), clientChannel);
                             } else if (clientChannel != null && netPackage.hasResponse()) {//Пришел ответ
                                 remoteControllerRequest.handleIncomingPacket(netPackage.getResponse());
                             } else if (clientChannel != null && netPackage.hasResponseProcessing()) {

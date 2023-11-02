@@ -27,6 +27,14 @@ public class GrpcNode implements Node {
         return runtimeId;
     }
 
+    @Override
+    public String toString() {
+        return "GrpcNode{" +
+                "name='" + name + '\'' +
+                ", runtimeId=" + runtimeId +
+                '}';
+    }
+
     public static class Builder {
 
         private String name;

@@ -9,6 +9,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.chan
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import io.grpc.stub.StreamObserver;
@@ -41,6 +42,10 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             @Override
             public void onNext(PNetPackage requestPackage) {
                 try {
+                    if (serverChannel[0] != null && log.isTraceEnabled()) {
+                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
+                    }
+
                     if (serverChannel[0] == null && requestPackage.hasHandshake()) {
                         //Сообщаем о себе и регистрируем канал
                         PNetPackage answerHandshake = NetPackageHandshakeCreator.create((GrpcNetworkTransitImpl) transportManager.networkTransit);
@@ -57,8 +62,9 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
                         }
 
                         channels.registerChannel(serverChannel[0]);
+                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
                     } else if (serverChannel[0] !=null && requestPackage.hasRequest()) {
-                        remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), responseObserver);
+                        remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), serverChannel[0]);
                     } else if (serverChannel[0] !=null && requestPackage.hasResponse()) {
                         remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
                     } else if (serverChannel[0] !=null && requestPackage.hasResponseProcessing()) {

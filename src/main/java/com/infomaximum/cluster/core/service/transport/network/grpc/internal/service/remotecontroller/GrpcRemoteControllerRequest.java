@@ -27,7 +27,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     private final ScheduledExecutorService scheduledServiceWaitNetExecute;
 
-    private final ConcurrentHashMap<Integer, StreamObserver<PNetPackage>> waitLocalExecuteRequest;
+    private final ConcurrentHashMap<Integer, ChannelImpl> waitLocalExecuteRequest;
     private final ScheduledExecutorService scheduledServiceWaitLocalExecute;
 
     public GrpcRemoteControllerRequest(GrpcNetworkTransitImpl grpcNetworkTransit) {
@@ -111,10 +111,10 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         return System.currentTimeMillis() + grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis();
     }
 
-    public void handleIncomingPacket(PNetPackageRequest request, StreamObserver<PNetPackage> responseObserver) {
+    public void handleIncomingPacket(PNetPackageRequest request, ChannelImpl channel) {
         int packageId = request.getPackageId();
 
-        waitLocalExecuteRequest.put(packageId, responseObserver);
+        waitLocalExecuteRequest.put(packageId, channel);
         byte[][] byteArgs = new byte[request.getArgsCount()][];
         for (int i = 0; i < byteArgs.length; i++) {
             byteArgs[i] = request.getArgs(i).toByteArray();
@@ -134,7 +134,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         } else {
             responseBuilder.setResult(ByteString.copyFrom(result.value()));
         }
-        responseObserver.onNext(PNetPackage.newBuilder().setResponse(responseBuilder).build());
+        channel.sent(PNetPackage.newBuilder().setResponse(responseBuilder).build());
     }
 
     public void disconnectChannel(Channel channel) {
@@ -180,11 +180,11 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     }
 
     private void sendWaitResponsePackets(){
-        for (Map.Entry<Integer, StreamObserver<PNetPackage>> entry : waitLocalExecuteRequest.entrySet()) {
+        for (Map.Entry<Integer, ChannelImpl> entry : waitLocalExecuteRequest.entrySet()) {
             PNetPackageProcessing pNetPackageProcessing = PNetPackageProcessing.newBuilder()
                     .setPackageId(entry.getKey())
                     .build();
-            entry.getValue().onNext(PNetPackage.newBuilder().setResponseProcessing(pNetPackageProcessing).build());
+            entry.getValue().sent(PNetPackage.newBuilder().setResponseProcessing(pNetPackageProcessing).build());
         }
     }
 

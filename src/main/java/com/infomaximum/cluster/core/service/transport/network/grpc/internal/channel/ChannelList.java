@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ChannelList {
 
@@ -31,7 +32,7 @@ public class ChannelList {
             synchronized (channelItems) {
                 items = channelItems.get(remoteNodeRuntimeId);
                 if (items == null) {
-                    items = new ArrayList<>();
+                    items = new CopyOnWriteArrayList<>();
                     channelItems.put(remoteNodeRuntimeId, items);
                 }
             }
@@ -46,7 +47,7 @@ public class ChannelList {
             }
         }
 
-        log.debug("Add channel to: {}({}), type: {}, total: {}", remoteNode.getName(), remoteNode.getRuntimeId(), channel.getType(), items.size());
+        log.debug("Add channel: {}, total: {}", channel, items.size());
 
         //Отправляем оповещение
         if (fireEvent) {
@@ -72,7 +73,7 @@ public class ChannelList {
             }
         }
 
-        log.debug("Remove channel to: {}({}), type: {}, total: {}", remoteNode.getName(), remoteNode.getRuntimeId(), channel.getType(), items.size());
+        log.debug("Remove channel: {}, total: {}", channel, items.size());
 
         //Кидаем ошибку по всем ожидающим запросам
         remoteControllerRequest.disconnectChannel(channel);
