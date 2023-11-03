@@ -50,7 +50,12 @@ public abstract class ChannelImpl implements Channel {
         if (log.isTraceEnabled()) {
             log.trace("Send packet: {} to channel: {}", PackageLog.toString(value), this);
         }
-        requestObserver.onNext(value);
+        try {
+            requestObserver.onNext(value);
+        } catch (Exception e) {
+            requestObserver.onError(e);
+            throw e;
+        }
     }
 
     public void destroy(){

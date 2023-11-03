@@ -9,7 +9,10 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.Grpc
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.client.Clients;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class Channels implements AutoCloseable {
+
+    private final static Logger log = LoggerFactory.getLogger(Channels.class);
 
     public final TransportManager transportManager;
     private final ChannelList channelList;
@@ -31,8 +36,30 @@ public class Channels implements AutoCloseable {
                 builder.clientTargets, builder.clientFileCertChain, builder.clientFilePrivateKey, builder.clientTrustStore
         );
     }
-    public Channel getChannel(UUID nodeRutimeId) {
-        return channelList.getRandomChannel(nodeRutimeId);
+    public Channel getChannel(UUID nodeRuntimeId) {
+        return channelList.getRandomChannel(nodeRuntimeId);
+    }
+
+    public Channel getChannel(UUID nodeRuntimeId, int attempt) {
+        return channelList.getRandomChannel(nodeRuntimeId, attempt);
+    }
+
+    public void sendPacket(UUID targetNodeRuntimeId, PNetPackage netPackage, int attempt) throws Exception {
+        ChannelImpl channel;
+        while (true) {
+            channel = (ChannelImpl) getChannel(targetNodeRuntimeId, attempt);
+            if (channel == null) {
+                throw transportManager.getExceptionBuilder().buildRemoteComponentUnavailableException(targetNodeRuntimeId, null);
+            }
+
+            try {
+                channel.sent(netPackage);
+                return;
+            } catch (Exception e) {
+                //Пробуем найти другой канал
+                log.debug("Error send packed: {}, find another chanel", PackageLog.toString(netPackage), e);
+            }
+        }
     }
 
     protected void fireEventConnectNode(Node node) {

@@ -4,12 +4,22 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.stru
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.convert.ConvertProto;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshake;
+import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 public class ChannelClient extends ChannelImpl {
 
     ChannelClient(RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
         super(remoteNode, requestObserver);
+    }
+
+    @Override
+    public boolean isAvailable() {
+        if (!super.isAvailable()) {
+            return false;
+        }
+        ClientCallStreamObserver<PNetPackage> clientCallStreamObserver = (ClientCallStreamObserver<PNetPackage>) requestObserver;
+        return clientCallStreamObserver.isReady();
     }
 
     @Override

@@ -84,6 +84,23 @@ public class ChannelList {
         }
     }
 
+    public Channel getRandomChannel(UUID nodeRutimeId, int attempt) {
+        Channel channel = getRandomChannel(nodeRutimeId);
+        if (channel != null) {
+            return channel;
+        } else if (attempt > 0) {
+            log.debug("Attempt find channel to: {}, last: {}", nodeRutimeId, attempt);
+            try {
+                Thread.sleep(100L);
+            } catch (InterruptedException e) {
+                return null;
+            }
+            return getRandomChannel(nodeRutimeId, attempt - 1);
+        } else {
+            return null;
+        }
+    }
+
     public Channel getRandomChannel(UUID nodeRutimeId) {
         List<Channel> items = channelItems.get(nodeRutimeId);
         if (items == null) return null;
