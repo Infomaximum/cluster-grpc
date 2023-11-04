@@ -190,11 +190,10 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         NetRequest netRequest = requests.remove(packageId);
         if (netRequest == null) return;
 
-        log.debug("Fire error network request, packageId: {}", packageId);
-
         UUID remoteNodeRuntimeId = netRequest.targetNodeRuntimeId();
         Exception exception = grpcNetworkTransit.transportManager.getExceptionBuilder().buildTransitRequestException(
-                remoteNodeRuntimeId, netRequest.componentId(), netRequest.rControllerClassName(), netRequest.methodKey(), null
+                remoteNodeRuntimeId, netRequest.componentId(), netRequest.rControllerClassName(), netRequest.methodKey(),
+                new RuntimeException("Fire error network request, packageId: " + packageId)
         );
 
         PNetPackageResponse pNetPackageResponse = PNetPackageResponse.newBuilder()
