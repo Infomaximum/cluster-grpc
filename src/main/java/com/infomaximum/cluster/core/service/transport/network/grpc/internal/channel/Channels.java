@@ -23,6 +23,8 @@ public class Channels implements AutoCloseable {
 
     private final static Logger log = LoggerFactory.getLogger(Channels.class);
 
+    private final static int DEFAULT_ATTEMPT = 50;
+
     public final TransportManager transportManager;
     private final ChannelList channelList;
 
@@ -42,6 +44,10 @@ public class Channels implements AutoCloseable {
 
     public Channel getChannel(UUID nodeRuntimeId, int attempt) {
         return channelList.getRandomChannel(nodeRuntimeId, attempt);
+    }
+
+    public void sendPacketWithRepeat(UUID targetNodeRuntimeId, PNetPackage netPackage) throws Exception {
+        sendPacket(targetNodeRuntimeId, netPackage, DEFAULT_ATTEMPT);
     }
 
     public void sendPacket(UUID targetNodeRuntimeId, PNetPackage netPackage, int attempt) throws Exception {

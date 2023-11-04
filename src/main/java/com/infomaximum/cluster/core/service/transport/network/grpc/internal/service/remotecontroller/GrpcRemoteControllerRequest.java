@@ -71,10 +71,10 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         }
         PNetPackage netPackage = PNetPackage.newBuilder().setRequest(builderPackageRequest).build();
 
-        //Отправляем, исходим из того, что, может отправится несколько копий пакета, на другой стороне нужна фильтрация
+        //Отправляем, исходим из того, что, может отправиться несколько копий пакета, на другой стороне нужна фильтрация
         requests.put(packageId, new NetRequest(targetNodeRuntimeId, targetComponentId, rControllerClassName, methodKey, new Timeout(countTimeFail()), completableFuture));
         try {
-            grpcNetworkTransit.getChannels().sendPacket(targetNodeRuntimeId, netPackage, 20);
+            grpcNetworkTransit.getChannels().sendPacketWithRepeat(targetNodeRuntimeId, netPackage);
         } catch (Exception e) {
             requests.remove(packageId);
             throw e;
@@ -151,7 +151,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
         PNetPackage responseNetPackage = PNetPackage.newBuilder().setResponse(responseBuilder).build();
         try {
-            grpcNetworkTransit.getChannels().sendPacket(remoteNodeRuntimeId, responseNetPackage, 20);
+            grpcNetworkTransit.getChannels().sendPacketWithRepeat(remoteNodeRuntimeId, responseNetPackage);
         } catch (Exception e) {
             log.debug("Exception send response package: {}", PackageLog.toString(responseNetPackage));
         }
@@ -189,6 +189,8 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     private void fireErrorNetworkRequest(int packageId) {
         NetRequest netRequest = requests.remove(packageId);
         if (netRequest == null) return;
+
+        log.debug("Fire error network request, packageId: {}", packageId);
 
         UUID remoteNodeRuntimeId = netRequest.targetNodeRuntimeId();
         Exception exception = grpcNetworkTransit.transportManager.getExceptionBuilder().buildTransitRequestException(
