@@ -24,11 +24,16 @@ public abstract class ChannelImpl implements Channel {
 
     private final UUID uuid;
 
-    protected ChannelImpl(RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
+    protected ChannelImpl(UUID uuid, RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
+        this.uuid = uuid;
         this.remoteNode = remoteNode;
         this.requestObserver = requestObserver;
         this.available = true;
-        this.uuid = UUID.randomUUID();
+    }
+
+    @Override
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override

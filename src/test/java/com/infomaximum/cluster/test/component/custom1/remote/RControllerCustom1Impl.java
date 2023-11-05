@@ -45,4 +45,9 @@ public class RControllerCustom1Impl extends AbstractRController<Custom1Component
         }
         return "OK";
     }
+
+    @Override
+    public void throwException(String message) throws ClusterException {
+        throw new ClusterException(message);
+    }
 }

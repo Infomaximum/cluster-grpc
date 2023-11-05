@@ -8,4 +8,5 @@ public interface RControllerCustom1 extends RController {
     String empty() throws ClusterException;
     ClusterInputStream getInputStream(int size) throws ClusterException;
     String slowRequest(long time) throws ClusterException;
+    void throwException(String message) throws ClusterException;
 }

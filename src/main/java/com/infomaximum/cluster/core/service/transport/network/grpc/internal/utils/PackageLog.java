@@ -13,8 +13,10 @@ public class PackageLog {
             return toString(value.getResponseProcessing());
         } else if (value.hasUpdateNode()) {
             return toString(value.getUpdateNode());
-        } else if (value.hasHandshake()) {
-            return toString(value.getHandshake());
+        } else if (value.hasHandshakeRequest()) {
+            return toString(value.getHandshakeRequest());
+        } else if (value.hasHandshakeResponse()) {
+            return toString(value.getHandshakeResponse());
         } else {
             throw new RuntimeException("Unknown package: " + value);
         }
@@ -42,7 +44,11 @@ public class PackageLog {
         return "PackageUpdateNode{}";
     }
 
-    public static String toString(PNetPackageHandshake value) {
-        return "PackageHandshake{}";
+    public static String toString(PNetPackageHandshakeRequest value) {
+        return "PackageHandshakeRequest{}";
+    }
+
+    public static String toString(PNetPackageHandshakeResponse value) {
+        return "PackageHandshakeResponse{}";
     }
 }

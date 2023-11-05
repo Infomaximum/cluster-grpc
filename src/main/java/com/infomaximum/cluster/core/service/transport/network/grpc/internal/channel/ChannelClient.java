@@ -3,14 +3,16 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.cha
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.convert.ConvertProto;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshake;
+import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshakeResponse;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
+import java.util.UUID;
+
 public class ChannelClient extends ChannelImpl {
 
-    ChannelClient(RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
-        super(remoteNode, requestObserver);
+    ChannelClient(UUID uuid, RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
+        super(uuid, remoteNode, requestObserver);
     }
 
     @Override
@@ -29,17 +31,19 @@ public class ChannelClient extends ChannelImpl {
 
     public static class Builder {
 
+        private final UUID uuid;
         private final StreamObserver<PNetPackage> requestObserver;
-        private final PNetPackageHandshake remotePackageHandshake;
+        private final PNetPackageHandshakeResponse handshakeResponse;
 
-        public Builder(StreamObserver<PNetPackage> requestObserver, PNetPackageHandshake remotePackageHandshake) {
+        public Builder(UUID uuid, StreamObserver<PNetPackage> requestObserver, PNetPackageHandshakeResponse handshakeResponse) {
+            this.uuid = uuid;
             this.requestObserver = requestObserver;
-            this.remotePackageHandshake = remotePackageHandshake;
+            this.handshakeResponse = handshakeResponse;
         }
 
         public ChannelClient build(){
-            RNode remoteNode = ConvertProto.convert(remotePackageHandshake.getNode());
-            return new ChannelClient(remoteNode, requestObserver);
+            RNode remoteNode = ConvertProto.convert(handshakeResponse.getNode());
+            return new ChannelClient(uuid, remoteNode, requestObserver);
         }
     }
 }

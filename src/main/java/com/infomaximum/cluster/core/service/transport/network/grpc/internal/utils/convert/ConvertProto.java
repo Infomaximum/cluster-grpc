@@ -21,14 +21,14 @@ public class ConvertProto {
 
     private final static Logger log = LoggerFactory.getLogger(ConvertProto.class);
 
-    public static RNode convert(PNetPackageHandshakeNode netNode){
-        UUID nodeRuntimeId = UUID.fromString(netNode.getRuntimeId());
+    public static RNode convert(PNetPackageHandshakeNode handshakeNode){
+        UUID nodeRuntimeId = new UUID(handshakeNode.getRuntimeIdMostSigBits(), handshakeNode.getRuntimeIdLeastSigBits());
 
-        Node node = new GrpcNode.Builder(netNode.getName(), nodeRuntimeId).build();
+        Node node = new GrpcNode.Builder(handshakeNode.getName(), nodeRuntimeId).build();
 
         List<LocationRuntimeComponent> components = new ArrayList<>();
-        for (int i = 0; i < netNode.getPNetPackageComponentsCount(); i++) {
-            PNetPackageComponent netComponent = netNode.getPNetPackageComponents(i);
+        for (int i = 0; i < handshakeNode.getPNetPackageComponentsCount(); i++) {
+            PNetPackageComponent netComponent = handshakeNode.getPNetPackageComponents(i);
             components.add(convert(nodeRuntimeId, netComponent));
         }
         return new RNode(node, components);

@@ -5,22 +5,30 @@ option java_multiple_files = true;
 
 message PNetPackage  {
   oneof impl {
-    PNetPackageHandshake handshake = 1;
-    PNetPackageRequest request = 2;
-    PNetPackageResponse response = 3;
-    PNetPackageProcessing responseProcessing = 4;
-    PNetPackageUpdateNode updateNode = 5;
+    PNetPackageHandshakeRequest handshakeRequest = 1;
+    PNetPackageHandshakeResponse handshakeResponse= 2;
+    PNetPackageRequest request = 3;
+    PNetPackageResponse response = 4;
+    PNetPackageProcessing responseProcessing = 5;
+    PNetPackageUpdateNode updateNode = 6;
   }
 }
 
-message PNetPackageHandshake  {
+message PNetPackageHandshakeRequest  {
+  sfixed64 channelIdMostSigBits = 1;//channel uuid
+  sfixed64 channelIdLeastSigBit = 2;//channel uuid
+  PNetPackageHandshakeNode node = 3;
+}
+
+message PNetPackageHandshakeResponse  {
   PNetPackageHandshakeNode node = 1;
 }
 
 message PNetPackageHandshakeNode  {
   string name = 1;//node name
-  string runtimeId = 2;//node runtime unique id
-  repeated PNetPackageComponent pNetPackageComponents = 3;
+  sfixed64 runtimeIdMostSigBits = 2;//node runtime uuid
+  sfixed64 runtimeIdLeastSigBits = 3;//node runtime uuid
+  repeated PNetPackageComponent pNetPackageComponents = 4;
 }
 
 message PNetPackageComponent  {

@@ -12,6 +12,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.serv
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
+import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshakeRequest;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +47,14 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
                         log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
                     }
 
-                    if (serverChannel[0] == null && requestPackage.hasHandshake()) {
+                    if (serverChannel[0] == null && requestPackage.hasHandshakeRequest()) {
                         //Сообщаем о себе и регистрируем канал
-                        PNetPackage answerHandshake = NetPackageHandshakeCreator.create((GrpcNetworkTransitImpl) transportManager.networkTransit);
-                        responseObserver.onNext(answerHandshake);
+                        PNetPackageHandshakeRequest handshakeRequest = requestPackage.getHandshakeRequest();
 
-                        serverChannel[0] = new ChannelServer.Builder(responseObserver, requestPackage.getHandshake()).build();
+                        PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse((GrpcNetworkTransitImpl) transportManager.networkTransit);
+                        responseObserver.onNext(handshakeResponse);
+
+                        serverChannel[0] = new ChannelServer.Builder(responseObserver, handshakeRequest).build();
 
                         Node currentNode = transportManager.cluster.node;
                         Node channelRemoteNode = serverChannel[0].remoteNode.node;

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class Client implements AutoCloseable {
@@ -39,8 +40,10 @@ public class Client implements AutoCloseable {
     private final StreamObserver<PNetPackage> responseObserver;
     private final MLogger mLog;
 
-    private volatile ChannelImpl clientChannel;
-    private volatile StreamObserver<PNetPackage> requestObserver;
+
+    private volatile UUID channelUuid;
+    private volatile ChannelClient clientChannel;
+    private volatile StreamObserver<PNetPackage> channelRequestObserver;
 
     private volatile boolean isClosed = false;
 
@@ -83,8 +86,8 @@ public class Client implements AutoCloseable {
                                 log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(netPackage), clientChannel);
                             }
 
-                            if (clientChannel == null && netPackage.hasHandshake()) {
-                                clientChannel = new ChannelClient.Builder(requestObserver, netPackage.getHandshake()).build();
+                            if (clientChannel == null && netPackage.hasHandshakeResponse()) {
+                                clientChannel = new ChannelClient.Builder(channelUuid, channelRequestObserver, netPackage.getHandshakeResponse()).build();
 
                                 //Проверяем, что не подключились к себе же
                                 Node currentNode = grpcNetworkTransit.getNode();
@@ -104,7 +107,7 @@ public class Client implements AutoCloseable {
 
                                 //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
                                 PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
-                                requestObserver.onNext(netPackageUpdateNode);
+                                channelRequestObserver.onNext(netPackageUpdateNode);
                             } else if (clientChannel != null && netPackage.hasRequest()) {//Пришел запрос
                                 remoteControllerRequest.handleIncomingPacket(netPackage.getRequest(), clientChannel);
                             } else if (clientChannel != null && netPackage.hasResponse()) {//Пришел ответ
@@ -170,9 +173,10 @@ public class Client implements AutoCloseable {
         if (isClosed) return;
 
         //Инициализируем
-        requestObserver = exchangeStub.exchange(responseObserver);
-        PNetPackage packageHandshake = NetPackageHandshakeCreator.create(grpcNetworkTransit);
-        requestObserver.onNext(packageHandshake);
+        channelUuid = UUID.randomUUID();
+        channelRequestObserver = exchangeStub.exchange(responseObserver);
+        PNetPackage packageHandshake = NetPackageHandshakeCreator.createRequest(grpcNetworkTransit, channelUuid);
+        channelRequestObserver.onNext(packageHandshake);
     }
 
     private void destroyChannel() {
