@@ -6,6 +6,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.Grpc
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
@@ -24,6 +25,8 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
     private final GrpcRemoteControllerRequest remoteControllerRequest;
     private final TransportManager transportManager;
     private final Channels channels;
+    private final GrpcPoolExecutor grpcPoolExecutor;
+
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
     public PServiceExchangeImpl(GrpcServer grpcServer, Channels channels) {
@@ -31,6 +34,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         this.transportManager = grpcServer.grpcNetworkTransit.transportManager;
         this.channels = channels;
         this.uncaughtExceptionHandler = grpcServer.grpcNetworkTransit.getUncaughtExceptionHandler();
+        this.grpcPoolExecutor = grpcServer.grpcNetworkTransit.grpcPoolExecutor;
     }
 
 
@@ -42,46 +46,48 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
             @Override
             public void onNext(PNetPackage requestPackage) {
-                try {
-                    if (serverChannel[0] != null && log.isTraceEnabled()) {
-                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
-                    }
-
-                    if (serverChannel[0] == null && requestPackage.hasHandshakeRequest()) {
-                        //Сообщаем о себе и регистрируем канал
-                        PNetPackageHandshakeRequest handshakeRequest = requestPackage.getHandshakeRequest();
-
-                        PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse((GrpcNetworkTransitImpl) transportManager.networkTransit);
-                        responseObserver.onNext(handshakeResponse);
-
-                        serverChannel[0] = new ChannelServer.Builder(responseObserver, handshakeRequest).build();
-
-                        Node currentNode = transportManager.cluster.node;
-                        Node channelRemoteNode = serverChannel[0].remoteNode.node;
-                        if (currentNode.getRuntimeId().equals(channelRemoteNode.getRuntimeId())) {
-                            log.error("Loop connect: ignore channel");
-                            responseObserver.onCompleted();
-                            return;
+                grpcPoolExecutor.execute(() -> {
+                    try {
+                        if (serverChannel[0] != null && log.isTraceEnabled()) {
+                            log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
                         }
 
-                        channels.registerChannel(serverChannel[0]);
-                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
-                    } else if (serverChannel[0] !=null && requestPackage.hasRequest()) {
-                        remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), serverChannel[0]);
-                    } else if (serverChannel[0] !=null && requestPackage.hasResponse()) {
-                        remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
-                    } else if (serverChannel[0] !=null && requestPackage.hasResponseProcessing()) {
-                        remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
-                    } else if (serverChannel[0] !=null && requestPackage.hasUpdateNode()) {
-                        serverChannel[0].handleIncomingPacket(requestPackage.getUpdateNode());
-                    } else {
-                        log.error("Unknown state, channel: {}, packet: {}. Disconnect", serverChannel[0], requestPackage.toString());
-                        //TODO надо переподнимать соединение, а не падать
-                        uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("TODO: need reconnect"));
+                        if (serverChannel[0] == null && requestPackage.hasHandshakeRequest()) {
+                            //Сообщаем о себе и регистрируем канал
+                            PNetPackageHandshakeRequest handshakeRequest = requestPackage.getHandshakeRequest();
+
+                            PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse((GrpcNetworkTransitImpl) transportManager.networkTransit);
+                            responseObserver.onNext(handshakeResponse);
+
+                            serverChannel[0] = new ChannelServer.Builder(responseObserver, handshakeRequest).build();
+
+                            Node currentNode = transportManager.cluster.node;
+                            Node channelRemoteNode = serverChannel[0].remoteNode.node;
+                            if (currentNode.getRuntimeId().equals(channelRemoteNode.getRuntimeId())) {
+                                log.error("Loop connect: ignore channel");
+                                responseObserver.onCompleted();
+                                return;
+                            }
+
+                            channels.registerChannel(serverChannel[0]);
+                            log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
+                        } else if (serverChannel[0] !=null && requestPackage.hasRequest()) {
+                            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), serverChannel[0]);
+                        } else if (serverChannel[0] !=null && requestPackage.hasResponse()) {
+                            remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
+                        } else if (serverChannel[0] !=null && requestPackage.hasResponseProcessing()) {
+                            remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
+                        } else if (serverChannel[0] !=null && requestPackage.hasUpdateNode()) {
+                            serverChannel[0].handleIncomingPacket(requestPackage.getUpdateNode());
+                        } else {
+                            log.error("Unknown state, channel: {}, packet: {}. Disconnect", serverChannel[0], requestPackage.toString());
+                            //TODO надо переподнимать соединение, а не падать
+                            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("TODO: need reconnect"));
+                        }
+                    } catch (Throwable t) {
+                        uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
                     }
-                } catch (Throwable t) {
-                    uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
-                }
+                });
             }
 
             @Override

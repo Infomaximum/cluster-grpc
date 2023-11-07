@@ -15,7 +15,7 @@ public interface GrpcNetworkTransit {
 
     class Builder extends NetworkTransit.Builder {
 
-        private static Duration DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE = Duration.ofSeconds(20);
+        public static final Duration DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE = Duration.ofSeconds(20);
 
         public final String nodeName;
         public final int port;

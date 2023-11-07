@@ -10,6 +10,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcManagerRuntimeComponent;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.notification.NotificationUpdateComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
@@ -32,6 +33,9 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
     public final RemotePackerObject remotePackerObject;
 
     public final List<GrpcRemoteNode> targets;
+
+    public final GrpcPoolExecutor grpcPoolExecutor;
+
     private final GrpcServer grpcServer;
     private final ManagerRuntimeComponent managerRuntimeComponent;
     private final GrpcRemoteControllerRequest remoteControllerRequest;
@@ -52,6 +56,8 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
         this.targets = builder.getTargets();
         this.timeoutConfirmationWaitResponse = builder.getTimeoutConfirmationWaitResponse();
+
+        this.grpcPoolExecutor = new GrpcPoolExecutor(uncaughtExceptionHandler);
 
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
         this.channels = new Channels.Builder(this)

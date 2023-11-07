@@ -47,7 +47,7 @@ public class GrpcServer implements AutoCloseable {
                 sslContext = GrpcSslContexts
                         .forServer(new ByteArrayInputStream(fileCertChain), new ByteArrayInputStream(filePrivateKey))
                         .trustManager(trustStore)//Необходимо передавать клиенские сертификаты для валидации
-//                        .trustManager()//Попытаться найти способ передачи отозвонных сертефикатов- в крайнем случае можно обойтись
+//                        .trustManager()//Попытаться найти способ передачи отозванных сертефикатов- в крайнем случае можно обойтись
                         .clientAuth(ClientAuth.REQUIRE)
                         .build();
             } catch  (IOException e) {
@@ -59,8 +59,8 @@ public class GrpcServer implements AutoCloseable {
             serverBuilder = ServerBuilder.forPort(port);
         }
 
-
         serverBuilder
+                .intercept(new GrpcServerExceptionHandler(grpcNetworkTransit.getUncaughtExceptionHandler()))
                 .addService(new PServiceExchangeImpl(this, channels));
         try {
             server = serverBuilder.build().start();

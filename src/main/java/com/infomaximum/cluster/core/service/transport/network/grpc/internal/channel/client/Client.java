@@ -5,6 +5,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNod
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.*;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.MLogger;
@@ -45,6 +46,8 @@ public class Client implements AutoCloseable {
     private volatile ChannelClient clientChannel;
     private volatile StreamObserver<PNetPackage> channelRequestObserver;
 
+    private final GrpcPoolExecutor grpcPoolExecutor;
+
     private volatile boolean isClosed = false;
 
     public Client(GrpcNetworkTransitImpl grpcNetworkTransit, Channels channels, GrpcRemoteNode remoteNode, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
@@ -52,11 +55,12 @@ public class Client implements AutoCloseable {
         this.remoteControllerRequest = (GrpcRemoteControllerRequest) grpcNetworkTransit.getRemoteControllerRequest();
         this.channels = channels;
         this.remoteNode = remoteNode;
+        this.grpcPoolExecutor = grpcNetworkTransit.grpcPoolExecutor;
 
         if (filePrivateKey == null) {
             channel = NettyChannelBuilder.forTarget(remoteNode.target)
                     .usePlaintext()
-                    .disableRetry()
+                    .enableRetry()
                     .build();
         } else {
             SslContext sslContext;
@@ -70,7 +74,7 @@ public class Client implements AutoCloseable {
             }
             channel = NettyChannelBuilder.forTarget(remoteNode.target)
                     .sslContext(sslContext)
-                    .disableRetry()
+                    .enableRetry()
                     .build();
         }
 
@@ -81,49 +85,51 @@ public class Client implements AutoCloseable {
                 new StreamObserver<PNetPackage>() {
                     @Override
                     public void onNext(PNetPackage netPackage) {
-                        try {
-                            if (clientChannel != null && log.isTraceEnabled()) {
-                                log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(netPackage), clientChannel);
-                            }
-
-                            if (clientChannel == null && netPackage.hasHandshakeResponse()) {
-                                clientChannel = new ChannelClient.Builder(channelUuid, channelRequestObserver, netPackage.getHandshakeResponse()).build();
-
-                                //Проверяем, что не подключились к себе же
-                                Node currentNode = grpcNetworkTransit.getNode();
-                                Node channelRemoteNode = clientChannel.remoteNode.node;
-                                if (currentNode.getRuntimeId().equals(channelRemoteNode.getRuntimeId())) {
-                                    log.error("Loop connect, disconnect: {},", remoteNode.target);
-                                    isClosed = true;
-                                    channel.shutdownNow();
-                                    return;
-                                }
-
-                                channels.registerChannel(clientChannel);
-
-                                if (log.isTraceEnabled()) {
+                        grpcPoolExecutor.execute(() -> {
+                            try {
+                                if (clientChannel != null && log.isTraceEnabled()) {
                                     log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(netPackage), clientChannel);
                                 }
 
-                                //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
-                                PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
-                                channelRequestObserver.onNext(netPackageUpdateNode);
-                            } else if (clientChannel != null && netPackage.hasRequest()) {//Пришел запрос
-                                remoteControllerRequest.handleIncomingPacket(netPackage.getRequest(), clientChannel);
-                            } else if (clientChannel != null && netPackage.hasResponse()) {//Пришел ответ
-                                remoteControllerRequest.handleIncomingPacket(netPackage.getResponse());
-                            } else if (clientChannel != null && netPackage.hasResponseProcessing()) {
-                                remoteControllerRequest.handleIncomingPacket(netPackage.getResponseProcessing());
-                            } else if (clientChannel != null && netPackage.hasUpdateNode()) {
-                                clientChannel.handleIncomingPacket(netPackage.getUpdateNode());
-                            } else {
-                                log.error("Unknown state, channel: {}, packet: {}. Disconnect", clientChannel, netPackage.toString());
-                                //TODO надо переподнимать соединение, а не падать
-                                grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new RuntimeException("TODO: need reconnect"));
+                                if (clientChannel == null && netPackage.hasHandshakeResponse()) {
+                                    clientChannel = new ChannelClient.Builder(channelUuid, channelRequestObserver, netPackage.getHandshakeResponse()).build();
+
+                                    //Проверяем, что не подключились к себе же
+                                    Node currentNode = grpcNetworkTransit.getNode();
+                                    Node channelRemoteNode = clientChannel.remoteNode.node;
+                                    if (currentNode.getRuntimeId().equals(channelRemoteNode.getRuntimeId())) {
+                                        log.error("Loop connect, disconnect: {},", remoteNode.target);
+                                        isClosed = true;
+                                        channel.shutdownNow();
+                                        return;
+                                    }
+
+                                    channels.registerChannel(clientChannel);
+
+                                    if (log.isTraceEnabled()) {
+                                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(netPackage), clientChannel);
+                                    }
+
+                                    //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
+                                    PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
+                                    channelRequestObserver.onNext(netPackageUpdateNode);
+                                } else if (clientChannel != null && netPackage.hasRequest()) {//Пришел запрос
+                                    remoteControllerRequest.handleIncomingPacket(netPackage.getRequest(), clientChannel);
+                                } else if (clientChannel != null && netPackage.hasResponse()) {//Пришел ответ
+                                    remoteControllerRequest.handleIncomingPacket(netPackage.getResponse());
+                                } else if (clientChannel != null && netPackage.hasResponseProcessing()) {
+                                    remoteControllerRequest.handleIncomingPacket(netPackage.getResponseProcessing());
+                                } else if (clientChannel != null && netPackage.hasUpdateNode()) {
+                                    clientChannel.handleIncomingPacket(netPackage.getUpdateNode());
+                                } else {
+                                    log.error("Unknown state, channel: {}, packet: {}. Disconnect", clientChannel, netPackage.toString());
+                                    //TODO надо переподнимать соединение, а не падать
+                                    grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new RuntimeException("TODO: need reconnect"));
+                                }
+                            } catch (Throwable t) {
+                                grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), t);
                             }
-                        } catch (Throwable t) {
-                            grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), t);
-                        }
+                        });
                     }
 
                     @Override
