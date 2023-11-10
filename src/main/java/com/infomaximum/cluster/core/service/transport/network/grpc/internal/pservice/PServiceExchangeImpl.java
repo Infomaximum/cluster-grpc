@@ -40,54 +40,31 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
     @Override
     public StreamObserver<PNetPackage> exchange(StreamObserver<PNetPackage> responseObserver) {
-        final ChannelImpl[] serverChannel = {null};
+        final ChannelServer[] serverChannel = {null};
 
         StreamObserver<PNetPackage> requestObserver = new StreamObserver<PNetPackage>() {
 
             @Override
             public void onNext(PNetPackage requestPackage) {
-                grpcPoolExecutor.execute(() -> {
-                    try {
-                        if (serverChannel[0] != null && log.isTraceEnabled()) {
-                            log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
-                        }
-
-                        if (serverChannel[0] == null && requestPackage.hasHandshakeRequest()) {
-                            //Сообщаем о себе и регистрируем канал
-                            PNetPackageHandshakeRequest handshakeRequest = requestPackage.getHandshakeRequest();
-
-                            PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse((GrpcNetworkTransitImpl) transportManager.networkTransit);
-                            responseObserver.onNext(handshakeResponse);
-
-                            serverChannel[0] = new ChannelServer.Builder(responseObserver, handshakeRequest).build();
-
-                            Node currentNode = transportManager.cluster.node;
-                            Node channelRemoteNode = serverChannel[0].remoteNode.node;
-                            if (currentNode.getRuntimeId().equals(channelRemoteNode.getRuntimeId())) {
-                                log.error("Loop connect: ignore channel");
-                                responseObserver.onCompleted();
-                                return;
-                            }
-
-                            channels.registerChannel(serverChannel[0]);
-                            log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
-                        } else if (serverChannel[0] !=null && requestPackage.hasRequest()) {
-                            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), serverChannel[0]);
-                        } else if (serverChannel[0] !=null && requestPackage.hasResponse()) {
-                            remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
-                        } else if (serverChannel[0] !=null && requestPackage.hasResponseProcessing()) {
-                            remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
-                        } else if (serverChannel[0] !=null && requestPackage.hasUpdateNode()) {
-                            serverChannel[0].handleIncomingPacket(requestPackage.getUpdateNode());
-                        } else {
-                            log.error("Unknown state, channel: {}, packet: {}. Disconnect", serverChannel[0], requestPackage.toString());
-                            //TODO надо переподнимать соединение, а не падать
-                            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("TODO: need reconnect"));
-                        }
-                    } catch (Throwable t) {
-                        uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
+                try {
+                    if (serverChannel[0] != null && log.isTraceEnabled()) {
+                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
                     }
-                });
+
+                    if (serverChannel[0] == null) {
+                        serverChannel[0] = initChannel(responseObserver, requestPackage);
+                    } else {
+                        grpcPoolExecutor.execute(() -> {
+                            try {
+                                handleIncomingPacket(serverChannel[0], requestPackage);
+                            } catch (Throwable t) {
+                                uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
+                            }
+                        });
+                    }
+                } catch (Throwable t) {
+                    uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
+                }
             }
 
             @Override
@@ -111,6 +88,52 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             }
         };
         return requestObserver;
+    }
+
+    private ChannelServer initChannel(StreamObserver<PNetPackage> responseObserver, PNetPackage requestPackage) {
+        if (!requestPackage.hasHandshakeRequest()) {
+            log.error("Unknown state, channel: null, packet: {}. Disconnect", requestPackage.toString());
+            //TODO надо переподнимать соединение, а не падать
+            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
+            return null;
+        }
+
+        //Сообщаем о себе и регистрируем канал
+        PNetPackageHandshakeRequest handshakeRequest = requestPackage.getHandshakeRequest();
+
+        PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse((GrpcNetworkTransitImpl) transportManager.networkTransit);
+        responseObserver.onNext(handshakeResponse);
+
+        ChannelServer channelServer = new ChannelServer.Builder(responseObserver, handshakeRequest).build();
+
+        Node currentNode = transportManager.cluster.node;
+        Node channelRemoteNode = channelServer.remoteNode.node;
+        if (currentNode.getRuntimeId().equals(channelRemoteNode.getRuntimeId())) {
+            log.error("Loop connect: ignore channel");
+            responseObserver.onCompleted();
+            return null;
+        }
+
+        channels.registerChannel(channelServer);
+        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), channelServer);
+        return channelServer;
+    }
+
+
+    private void handleIncomingPacket(ChannelServer channelServer, PNetPackage requestPackage) {
+        if (requestPackage.hasRequest()) {
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), channelServer);
+        } else if (requestPackage.hasResponse()) {
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
+        } else if (requestPackage.hasResponseProcessing()) {
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
+        } else if (requestPackage.hasUpdateNode()) {
+            channelServer.handleIncomingPacket(requestPackage.getUpdateNode());
+        } else {
+            log.error("Unknown state, channel: {}, packet: {}. Disconnect", channelServer, requestPackage.toString());
+            //TODO надо переподнимать соединение, а не падать
+            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
+        }
     }
 
     private void destroyChannel(ChannelImpl[] serverChannel) {

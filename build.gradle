@@ -24,7 +24,7 @@ if (project.hasProperty('ossrhUsername')) {
 }
 
 group 'com.infomaximum'
-version '0.1.3p12'
+version '0.1.3p13'
 
 ext.moduleName = 'com.infomaximum.cluster.grpc'
 
