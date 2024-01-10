@@ -55,4 +55,16 @@ public class RemoteManagerRuntimeComponent {
         }
         return null;
     }
+
+    public Collection<LocationRuntimeComponent> gets(UUID nodeRuntimeId) {
+        Channel channel = channels.getChannel(nodeRuntimeId);
+        if (channel == null) {
+            return null;
+        }
+        ArrayList<LocationRuntimeComponent> components = new ArrayList<>();
+        for(LocationRuntimeComponent runtimeComponentInfo: channel.getRemoteNode().getComponents()) {
+            components.add(runtimeComponentInfo);
+        }
+        return components;
+    }
 }

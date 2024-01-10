@@ -54,6 +54,19 @@ public class GrpcManagerRuntimeComponent implements ManagerRuntimeComponent {
     }
 
     @Override
+    public Collection<LocationRuntimeComponent> gets(UUID nodeRuntimeId) {
+        if (currentNode.getRuntimeId().equals(nodeRuntimeId)) {
+            ArrayList<LocationRuntimeComponent> components = new ArrayList<>();
+            for(RuntimeComponentInfo componentInfo: localManagerRuntimeComponent.getComponents()) {
+                components.add(new LocationRuntimeComponent(nodeRuntimeId, componentInfo));
+            }
+            return components;
+        } else {
+            return remoteManagerRuntimeComponent.gets(nodeRuntimeId);
+        }
+    }
+
+    @Override
     public Collection<LocationRuntimeComponent> find(Class<? extends RController> remoteControllerClazz) {
         ArrayList<LocationRuntimeComponent> components = new ArrayList<>();
         for(RuntimeComponentInfo componentInfo: localManagerRuntimeComponent.find(remoteControllerClazz)) {
