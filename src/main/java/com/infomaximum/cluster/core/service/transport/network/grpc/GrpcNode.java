@@ -1,7 +1,6 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc;
 
 import com.infomaximum.cluster.Node;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.RandomUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -40,12 +39,16 @@ public class GrpcNode implements Node {
         private String name;
         private UUID runtimeId;
 
-        public Builder(int port) {
+        public Builder(GrpcNetworkTransit.Builder.Server server) {
             try {
-                this.name = InetAddress.getLocalHost().getHostName() + ":" + port;
+                this.name = InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException e) {
-                this.name = "unknownhost:" + port;
+                this.name = "unknownhost";
             }
+            if (server != null) {
+                this.name += ":" + server.port();
+            }
+
             this.runtimeId = UUID.randomUUID();
         }
 

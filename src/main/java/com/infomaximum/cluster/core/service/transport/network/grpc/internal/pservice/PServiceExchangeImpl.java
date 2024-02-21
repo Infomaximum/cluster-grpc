@@ -7,7 +7,6 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.chan
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
@@ -29,12 +28,13 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
-    public PServiceExchangeImpl(GrpcServer grpcServer, Channels channels) {
-        this.remoteControllerRequest = (GrpcRemoteControllerRequest) grpcServer.grpcNetworkTransit.getRemoteControllerRequest();
-        this.transportManager = grpcServer.grpcNetworkTransit.transportManager;
+    public PServiceExchangeImpl(Channels channels) {
+        GrpcNetworkTransitImpl grpcNetworkTransit = (GrpcNetworkTransitImpl) channels.transportManager.networkTransit;
+        this.remoteControllerRequest = (GrpcRemoteControllerRequest) grpcNetworkTransit.getRemoteControllerRequest();
+        this.transportManager = channels.transportManager;
         this.channels = channels;
-        this.uncaughtExceptionHandler = grpcServer.grpcNetworkTransit.getUncaughtExceptionHandler();
-        this.grpcPoolExecutor = grpcServer.grpcNetworkTransit.grpcPoolExecutor;
+        this.uncaughtExceptionHandler = channels.getUncaughtExceptionHandler();
+        this.grpcPoolExecutor = grpcNetworkTransit.grpcPoolExecutor;
     }
 
 

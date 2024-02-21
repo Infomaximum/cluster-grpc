@@ -7,10 +7,12 @@ import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeCom
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.client.Clients;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
+import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit.Builder.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,15 +31,26 @@ public class Channels implements AutoCloseable {
     private final ChannelList channelList;
 
     private final Clients clients;
+    private final GrpcServer grpcServer;
+
+//    private final PingPongService pingPongService;
 
     private Channels(Builder builder) {
         this.transportManager = builder.grpcNetworkTransit.transportManager;
         this.channelList = new ChannelList(this, (GrpcRemoteControllerRequest) builder.grpcNetworkTransit.getRemoteControllerRequest());
         this.clients = new Clients(
                 builder.grpcNetworkTransit, channelList,
-                builder.clientTargets, builder.clientFileCertChain, builder.clientFilePrivateKey, builder.clientTrustStore
+                builder.targets, builder.clientFileCertChain, builder.clientFilePrivateKey, builder.clientTrustStore
         );
+        if (builder.server != null) {
+            this.grpcServer = new GrpcServer(this, builder.server.port(), builder.clientFileCertChain, builder.clientFilePrivateKey, builder.clientTrustStore);
+        } else {
+            this.grpcServer = null;
+        }
+//        this.pingPongService = new PingPongService();
     }
+
+
     public Channel getChannel(UUID nodeRuntimeId) {
         return channelList.getRandomChannel(nodeRuntimeId);
     }
@@ -110,11 +123,22 @@ public class Channels implements AutoCloseable {
     }
 
     public void start() {
+        if (grpcServer != null) {
+            grpcServer.start();
+        }
         clients.start();
+    }
+
+    public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+        return transportManager.cluster.getUncaughtExceptionHandler();
     }
 
     @Override
     public void close() {
+//        pingPongService.close();
+        if (grpcServer != null) {
+            grpcServer.close();
+        }
         clients.close();
     }
 
@@ -122,22 +146,32 @@ public class Channels implements AutoCloseable {
     public static class Builder {
 
         private final GrpcNetworkTransitImpl grpcNetworkTransit;
-
-        private List<GrpcRemoteNode> clientTargets;
         private byte[] clientFileCertChain;
         private byte[] clientFilePrivateKey;
         private TrustManagerFactory clientTrustStore;
+
+        private Server server;
+        private List<GrpcRemoteNode> targets;
 
 
         public Builder(GrpcNetworkTransitImpl grpcNetworkTransit) {
             this.grpcNetworkTransit = grpcNetworkTransit;
         }
 
-        public Builder withClient(List<GrpcRemoteNode> targets, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
-            this.clientTargets = targets;
+        public Builder withSsl(byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
             this.clientFileCertChain = fileCertChain;
             this.clientFilePrivateKey = filePrivateKey;
             this.clientTrustStore = trustStore;
+            return this;
+        }
+
+        public Builder withServer(Server server) {
+            this.server = server;
+            return this;
+        }
+
+        public Builder withTargets(List<GrpcRemoteNode> targets) {
+            this.targets = targets;
             return this;
         }
 

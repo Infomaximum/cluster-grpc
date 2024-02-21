@@ -11,7 +11,6 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNod
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channels;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcManagerRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server.GrpcServer;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.notification.NotificationUpdateComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.remote.packer.RemotePackerObject;
@@ -36,13 +35,15 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     public final GrpcPoolExecutor grpcPoolExecutor;
 
-    private final GrpcServer grpcServer;
     private final ManagerRuntimeComponent managerRuntimeComponent;
     private final GrpcRemoteControllerRequest remoteControllerRequest;
 
     private final Channels channels;
 
     private final Duration timeoutConfirmationWaitResponse;
+
+//    private final Duration pingPongInterval;
+//    private final Duration pingPongTimeout;
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -52,22 +53,28 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         this.remotePackerObject = transportManager.getRemotePackerObject();
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
 
-        node = new GrpcNode.Builder(builder.port).withName(builder.nodeName).build();
+        GrpcNode.Builder nodeBuilder = new GrpcNode.Builder(builder.getServer());
+        if (builder.nodeName != null) {
+            nodeBuilder.withName(builder.nodeName);
+        }
+        node = nodeBuilder.build();
 
         this.targets = builder.getTargets();
         this.timeoutConfirmationWaitResponse = builder.getTimeoutConfirmationWaitResponse();
+//        this.pingPongInterval = builder.getPingPongInterval();
+//        this.pingPongTimeout = builder.getPingPongTimeout();
 
         this.grpcPoolExecutor = new GrpcPoolExecutor(uncaughtExceptionHandler);
 
         this.remoteControllerRequest = new GrpcRemoteControllerRequest(this);
         this.channels = new Channels.Builder(this)
-                .withClient(targets, fileCertChain, filePrivateKey, trustStore)
+                .withSsl(fileCertChain, filePrivateKey, trustStore)
+                .withServer(builder.getServer())
+                .withTargets(targets)
                 .build();
 
         this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this, channels);
         new NotificationUpdateComponent(node, managerRuntimeComponent.getLocalManagerRuntimeComponent(), channels);
-
-        this.grpcServer = new GrpcServer(this, channels, builder.port, fileCertChain, filePrivateKey, trustStore);
     }
 
     @Override
@@ -101,7 +108,6 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
     @Override
     public void start() {
         this.channels.start();
-        this.grpcServer.start();
     }
 
     public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
@@ -111,8 +117,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     @Override
     public void close() {
-        remoteControllerRequest.close();
         channels.close();
-        grpcServer.close();
+        remoteControllerRequest.close();
     }
 }

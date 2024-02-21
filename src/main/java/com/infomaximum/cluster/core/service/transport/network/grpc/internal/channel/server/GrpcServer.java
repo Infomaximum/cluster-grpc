@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.server;
 
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class GrpcServer implements AutoCloseable {
 
-    public final GrpcNetworkTransitImpl grpcNetworkTransit;
+//    public final GrpcNetworkTransitImpl grpcNetworkTransit;
     private final Channels channels;
 
     private final int port;
@@ -29,8 +29,7 @@ public class GrpcServer implements AutoCloseable {
 
     private Server server;
 
-    public GrpcServer(GrpcNetworkTransitImpl grpcNetworkTransit, Channels channels, int port, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
-        this.grpcNetworkTransit = grpcNetworkTransit;
+    public GrpcServer(Channels channels, int port, byte[] fileCertChain, byte[] filePrivateKey, TrustManagerFactory trustStore) {
         this.channels = channels;
         this.port = port;
 
@@ -60,8 +59,8 @@ public class GrpcServer implements AutoCloseable {
         }
 
         serverBuilder
-                .intercept(new GrpcServerExceptionHandler(grpcNetworkTransit.getUncaughtExceptionHandler()))
-                .addService(new PServiceExchangeImpl(this, channels));
+                .intercept(new GrpcServerExceptionHandler(channels.getUncaughtExceptionHandler()))
+                .addService(new PServiceExchangeImpl(channels));
         try {
             server = serverBuilder.build().start();
         } catch (IOException e) {

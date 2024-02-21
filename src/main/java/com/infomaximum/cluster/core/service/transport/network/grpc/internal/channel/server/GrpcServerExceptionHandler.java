@@ -1,4 +1,4 @@
-package com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.server;
+package com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.server;
 
 import io.grpc.*;
 

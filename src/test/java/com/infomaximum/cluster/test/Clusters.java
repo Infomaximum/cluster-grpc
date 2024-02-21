@@ -125,26 +125,41 @@ public class Clusters implements AutoCloseable {
             int port1 = FinderFreeHostPort.find();
             int port2 = FinderFreeHostPort.find();
 
-            builderNetworkTransit1 = new GrpcNetworkTransit.Builder("node1", port1, uncaughtExceptionHandler);
-            if (mode == CommunicationMode.TWO_WAY || mode == CommunicationMode.ONE_WAY_1) {
-                builderNetworkTransit1.addTarget(
-                        new GrpcRemoteNode.Builder("localhost:" + port2).build()
-                );
-            } else if (mode==CommunicationMode.LOOP_WAY) {
-                builderNetworkTransit1.addTarget(
-                        new GrpcRemoteNode.Builder("localhost:" + port1).build()
-                );
-                builderNetworkTransit1.addTarget(
-                        new GrpcRemoteNode.Builder("localhost:" + port2).build()
-                );
-            }
+            builderNetworkTransit1 = new GrpcNetworkTransit.Builder("node1", uncaughtExceptionHandler);
+            builderNetworkTransit2 = new GrpcNetworkTransit.Builder("node2", uncaughtExceptionHandler);
 
-            builderNetworkTransit2 = new GrpcNetworkTransit.Builder("node2", port2, uncaughtExceptionHandler);
-            if (mode == CommunicationMode.TWO_WAY || mode == CommunicationMode.ONE_WAY_2) {
+            if (mode == CommunicationMode.TWO_WAY) {
+                builderNetworkTransit1.withServer(new GrpcNetworkTransit.Builder.Server(port1));
+                builderNetworkTransit1.addTarget(
+                        new GrpcRemoteNode.Builder("localhost:" + port2).build()
+                );
+
+                builderNetworkTransit2.withServer(new GrpcNetworkTransit.Builder.Server(port2));
                 builderNetworkTransit2.addTarget(
                         new GrpcRemoteNode.Builder("localhost:" + port1).build()
                 );
-            } else if (mode==CommunicationMode.LOOP_WAY) {
+            } else if (mode == CommunicationMode.ONE_WAY_1) {
+                builderNetworkTransit1.addTarget(
+                        new GrpcRemoteNode.Builder("localhost:" + port2).build()
+                );
+
+                builderNetworkTransit2.withServer(new GrpcNetworkTransit.Builder.Server(port2));
+            } else if (mode == CommunicationMode.ONE_WAY_2) {
+                builderNetworkTransit1.withServer(new GrpcNetworkTransit.Builder.Server(port1));
+
+                builderNetworkTransit2.addTarget(
+                        new GrpcRemoteNode.Builder("localhost:" + port1).build()
+                );
+            } else if (mode == CommunicationMode.LOOP_WAY) {
+                builderNetworkTransit1.withServer(new GrpcNetworkTransit.Builder.Server(port1));
+                builderNetworkTransit1.addTarget(
+                        new GrpcRemoteNode.Builder("localhost:" + port2).build()
+                );
+                builderNetworkTransit1.addTarget(
+                        new GrpcRemoteNode.Builder("localhost:" + port1).build()
+                );
+
+                builderNetworkTransit2.withServer(new GrpcNetworkTransit.Builder.Server(port2));
                 builderNetworkTransit2.addTarget(
                         new GrpcRemoteNode.Builder("localhost:" + port1).build()
                 );

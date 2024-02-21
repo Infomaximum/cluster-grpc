@@ -15,25 +15,43 @@ public interface GrpcNetworkTransit {
 
     class Builder extends NetworkTransit.Builder {
 
+        public record Server(int port){} //String host
+
         public static final Duration DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE = Duration.ofSeconds(20);
 
+//        public static final Duration DEFAULT_PING_PONG_INTERVAL = Duration.ofSeconds(5);
+//        public static final Duration DEFAULT_PING_PONG_TIMEOUT = Duration.ofSeconds(3);
+
         public final String nodeName;
-        public final int port;
+        private Server server;;
         private final List<GrpcRemoteNode> targets;
 
         private Duration timeoutConfirmationWaitResponse;
+
+//        private Duration pingPongInterval;
+//        private Duration pingPongTimeout;
 
         private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
         private byte[] fileCertChain;
         private byte[] filePrivateKey;
         private TrustManagerFactory trustStore;
 
-        public Builder(String nodeName, int port, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
+        public Builder(Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
+            this(null, uncaughtExceptionHandler);
+        }
+
+        public Builder(String nodeName, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
             this.nodeName = nodeName;
-            this.port = port;
             this.targets = new ArrayList<>();
             this.timeoutConfirmationWaitResponse = DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE;
+//            this.pingPongInterval = DEFAULT_PING_PONG_INTERVAL;
+//            this.pingPongTimeout = DEFAULT_PING_PONG_TIMEOUT;
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+        }
+
+        public Builder withServer(Server server) {
+            this.server = server;
+            return this;
         }
 
         public Builder addTarget(GrpcRemoteNode target) {
@@ -59,6 +77,16 @@ public interface GrpcNetworkTransit {
             return this;
         }
 
+//        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+//            this.pingPongInterval = interval;
+//            this.pingPongTimeout = timeout;
+//            return this;
+//        }
+
+        public Server getServer() {
+            return server;
+        }
+
         public List<GrpcRemoteNode> getTargets() {
             return Collections.unmodifiableList(targets);
         }
@@ -66,6 +94,14 @@ public interface GrpcNetworkTransit {
         public Duration getTimeoutConfirmationWaitResponse() {
             return timeoutConfirmationWaitResponse;
         }
+
+//        public Duration getPingPongInterval() {
+//            return pingPongInterval;
+//        }
+//
+//        public Duration getPingPongTimeout() {
+//            return pingPongTimeout;
+//        }
 
         public GrpcNetworkTransitImpl build(TransportManager transportManager) {
             return new GrpcNetworkTransitImpl(this, transportManager, fileCertChain, filePrivateKey, trustStore, uncaughtExceptionHandler);
