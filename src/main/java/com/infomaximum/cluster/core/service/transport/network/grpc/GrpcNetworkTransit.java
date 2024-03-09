@@ -22,7 +22,7 @@ public interface GrpcNetworkTransit {
         public static final Duration DEFAULT_PING_PONG_INTERVAL = Duration.ofSeconds(5);
         public static final Duration DEFAULT_PING_PONG_TIMEOUT = Duration.ofSeconds(3);
 
-        public final String nodeName;
+        private String nodeName;
         private Server server;;
         private final List<GrpcRemoteNode> targets;
 
@@ -37,16 +37,16 @@ public interface GrpcNetworkTransit {
         private TrustManagerFactory trustStore;
 
         public Builder(Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
-            this(null, uncaughtExceptionHandler);
-        }
-
-        public Builder(String nodeName, Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
-            this.nodeName = nodeName;
             this.targets = new ArrayList<>();
             this.timeoutConfirmationWaitResponse = DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE;
             this.pingPongInterval = DEFAULT_PING_PONG_INTERVAL;
             this.pingPongTimeout = DEFAULT_PING_PONG_TIMEOUT;
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+        }
+
+        public Builder withNodeName(String nodeName) {
+            this.nodeName = nodeName;
+            return this;
         }
 
         public Builder withServer(Server server) {
@@ -81,6 +81,10 @@ public interface GrpcNetworkTransit {
             this.pingPongInterval = interval;
             this.pingPongTimeout = timeout;
             return this;
+        }
+
+        public String getNodeName() {
+            return nodeName;
         }
 
         public Server getServer() {
