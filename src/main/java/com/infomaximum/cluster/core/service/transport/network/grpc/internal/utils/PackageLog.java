@@ -5,7 +5,11 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 public class PackageLog {
 
     public static String toString(PNetPackage value) {
-        if (value.hasRequest()) {
+        if (value.hasPing()) {
+            return toString(value.getPing());
+        } else if (value.hasPong()) {
+            return toString(value.getPong());
+        } else if (value.hasRequest()) {
             return toString(value.getRequest());
         } else if (value.hasResponse()) {
             return toString(value.getResponse());
@@ -50,5 +54,13 @@ public class PackageLog {
 
     public static String toString(PNetPackageHandshakeResponse value) {
         return "PackageHandshakeResponse{}";
+    }
+
+    public static String toString(PNetPackagePing value) {
+        return "PNetPackagePing{}";
+    }
+
+    public static String toString(PNetPackagePong value) {
+        return "PNetPackagePong{}";
     }
 }

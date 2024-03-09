@@ -25,6 +25,13 @@ public class ChannelServer extends ChannelImpl {
     }
 
     @Override
+    public void kill(Throwable throwable) {
+        destroy();
+        ServerCallStreamObserver<PNetPackage> serverCallStreamObserver = (ServerCallStreamObserver<PNetPackage>) requestObserver;
+        serverCallStreamObserver.onError(throwable);
+    }
+
+    @Override
     public ChannelType getType() {
         return ChannelType.SERVER;
     }

@@ -1,7 +1,8 @@
 package com.infomaximum.cluster.test.item;
 
 import com.infomaximum.cluster.Node;
-import com.infomaximum.cluster.UpdateNodeConnect;
+import com.infomaximum.cluster.event.CauseNodeDisconnect;
+import com.infomaximum.cluster.event.UpdateNodeConnect;
 import com.infomaximum.cluster.test.Clusters;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -63,7 +64,7 @@ public class UpdateNodeConnectTest {
         }
 
         @Override
-        public void onDisconnect(Node node) {
+        public void onDisconnect(Node node, CauseNodeDisconnect cause) {
             events.add("d-" + node.getName());
         }
     }

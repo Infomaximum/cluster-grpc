@@ -13,6 +13,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.util
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshakeRequest;
+import com.infomaximum.cluster.event.CauseNodeDisconnect;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,8 +70,9 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
             @Override
             public void onError(Throwable throwable) {
+                CauseNodeDisconnect.Type typeCause = CauseNodeDisconnect.Type.EXCEPTION;
                 try {
-                    destroyChannel(serverChannel);
+                    destroyChannel(serverChannel, new CauseNodeDisconnect(typeCause, throwable));
                     log.error("onError", throwable);
                 } catch (Throwable t) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
@@ -80,7 +82,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             @Override
             public void onCompleted() {
                 try {
-                    destroyChannel(serverChannel);
+                    destroyChannel(serverChannel, CauseNodeDisconnect.NORMAL);
                     log.error("onCompleted");
                 } catch (Throwable t) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
@@ -129,6 +131,10 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
         } else if (requestPackage.hasUpdateNode()) {
             channelServer.handleIncomingPacket(requestPackage.getUpdateNode());
+        } else if (requestPackage.hasPing()) {
+            channels.getPingPongService().handleIncomingPing(channelServer, requestPackage.getPing());
+        } else if (requestPackage.hasPong()) {
+            channels.getPingPongService().handleIncomingPong(channelServer, requestPackage.getPong());
         } else {
             log.error("Unknown state, channel: {}, packet: {}. Disconnect", channelServer, requestPackage.toString());
             //TODO надо переподнимать соединение, а не падать
@@ -136,9 +142,9 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         }
     }
 
-    private void destroyChannel(ChannelImpl[] serverChannel) {
+    private void destroyChannel(ChannelImpl[] serverChannel, CauseNodeDisconnect cause) {
         if (serverChannel[0] != null) {
-            channels.unRegisterChannel(serverChannel[0]);
+            channels.unRegisterChannel(serverChannel[0], cause);
             serverChannel[0] = null;
         }
     }

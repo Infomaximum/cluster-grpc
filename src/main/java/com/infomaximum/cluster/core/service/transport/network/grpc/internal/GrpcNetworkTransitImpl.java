@@ -42,8 +42,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     private final Duration timeoutConfirmationWaitResponse;
 
-//    private final Duration pingPongInterval;
-//    private final Duration pingPongTimeout;
+
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -61,8 +60,6 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
         this.targets = builder.getTargets();
         this.timeoutConfirmationWaitResponse = builder.getTimeoutConfirmationWaitResponse();
-//        this.pingPongInterval = builder.getPingPongInterval();
-//        this.pingPongTimeout = builder.getPingPongTimeout();
 
         this.grpcPoolExecutor = new GrpcPoolExecutor(uncaughtExceptionHandler);
 
@@ -71,6 +68,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
                 .withSsl(fileCertChain, filePrivateKey, trustStore)
                 .withServer(builder.getServer())
                 .withTargets(targets)
+                .withPingPongTimeout(builder.getPingPongInterval(), builder.getPingPongTimeout())
                 .build();
 
         this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this, channels);

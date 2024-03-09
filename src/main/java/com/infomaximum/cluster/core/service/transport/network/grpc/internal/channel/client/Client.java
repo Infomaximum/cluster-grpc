@@ -3,6 +3,7 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.cha
 import com.infomaximum.cluster.Node;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcException;
+import com.infomaximum.cluster.core.service.transport.network.grpc.exception.ClusterGrpcPingPongTimeoutException;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.*;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
@@ -12,6 +13,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.util
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
+import com.infomaximum.cluster.event.CauseNodeDisconnect;
 import com.infomaximum.cluster.utils.ExecutorUtil;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
@@ -111,7 +113,7 @@ public class Client implements AutoCloseable {
                     public void onError(Throwable t) {
                         try {
                             mLog.warn("Error connect to remote node: {}, exception: {}", remoteNode.target, t);
-                            destroyChannel();
+                            destroyChannel(t);
 
                             ExecutorUtil.executors.execute(() -> {
                                 try {
@@ -130,7 +132,7 @@ public class Client implements AutoCloseable {
                     public void onCompleted() {
                         try {
                             log.warn("Completed connection with remote node: {}, repeat...", remoteNode.target);
-                            destroyChannel();
+                            destroyChannel(null);
 
                             ExecutorUtil.executors.execute(() -> {
                                 try {
@@ -149,7 +151,7 @@ public class Client implements AutoCloseable {
 
     private void reconnect() {
         //Отзываем невалидный канал
-        destroyChannel();
+        destroyChannel(null);
 
         if (isClosed) return;
 
@@ -160,9 +162,17 @@ public class Client implements AutoCloseable {
         channelRequestObserver.onNext(packageHandshake);
     }
 
-    private void destroyChannel() {
+    private void destroyChannel(Throwable throwable) {
         if (clientChannel != null) {
-            channels.unRegisterChannel(clientChannel);
+            CauseNodeDisconnect cause;
+            if (throwable == null) {
+                cause = CauseNodeDisconnect.NORMAL;
+            } else if (throwable.getCause() != null && throwable.getCause().getClass() == ClusterGrpcPingPongTimeoutException.class) {
+                cause = new CauseNodeDisconnect(CauseNodeDisconnect.Type.TIMEOUT, throwable.getCause());
+            } else {
+                cause = new CauseNodeDisconnect(CauseNodeDisconnect.Type.EXCEPTION, throwable);
+            }
+            channels.unRegisterChannel(clientChannel, cause);
             clientChannel = null;
         }
     }
@@ -213,6 +223,10 @@ public class Client implements AutoCloseable {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
         } else if (requestPackage.hasUpdateNode()) {
             clientChannel.handleIncomingPacket(requestPackage.getUpdateNode());
+        } else if (requestPackage.hasPing()) {
+            channels.getPingPongService().handleIncomingPing(clientChannel, requestPackage.getPing());
+        } else if (requestPackage.hasPong()) {
+            channels.getPingPongService().handleIncomingPong(clientChannel, requestPackage.getPong());
         } else {
             log.error("Unknown state, channel: {}, packet: {}. Disconnect", clientChannel, requestPackage.toString());
             //TODO надо переподнимать соединение, а не падать

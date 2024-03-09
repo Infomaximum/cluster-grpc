@@ -25,6 +25,13 @@ public class ChannelClient extends ChannelImpl {
     }
 
     @Override
+    public void kill(Throwable throwable) {
+        destroy();
+        ClientCallStreamObserver<PNetPackage> clientCallStreamObserver = (ClientCallStreamObserver<PNetPackage>) requestObserver;
+        clientCallStreamObserver.onError(throwable);
+    }
+
+    @Override
     public ChannelType getType() {
         return ChannelType.CLIENT;
     }

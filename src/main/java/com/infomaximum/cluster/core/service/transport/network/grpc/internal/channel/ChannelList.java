@@ -1,9 +1,11 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel;
 
 import com.infomaximum.cluster.Node;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.utils.ChannelIterator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.RandomUtils;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
+import com.infomaximum.cluster.event.CauseNodeDisconnect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +57,7 @@ public class ChannelList {
         }
     }
 
-    public void removeChannel(Channel channel) {
+    public void removeChannel(Channel channel, CauseNodeDisconnect cause) {
         ((ChannelImpl) channel).destroy();
 
         Node remoteNode = channel.getRemoteNode().node;
@@ -80,7 +82,7 @@ public class ChannelList {
 
         //Отправляем оповещение
         if (fireEvent) {
-            channels.fireEventDisconnectNode(remoteNode);
+            channels.fireEventDisconnectNode(remoteNode, cause);
         }
     }
 
@@ -142,6 +144,20 @@ public class ChannelList {
         return nodes;
     }
 
+    public ChannelIterator getChannelIterator() {
+        return new ChannelIterator(channelItems);
+    }
+
+    /**
+     * Принудительно разрываем соединение с каналом
+     * @param channel
+     */
+    public void killChannel(Channel channel, CauseNodeDisconnect cause) {
+        ChannelImpl channelImpl = (ChannelImpl) channel;
+        channelImpl.kill(cause.throwable);
+        removeChannel(channel, cause);
+    }
+
     public void sendBroadcast(PNetPackage netPackage) {
         for (List<Channel> iChannels : channelItems.values()) {
             for (Channel channel : iChannels) {
@@ -149,7 +165,7 @@ public class ChannelList {
 
                 ChannelImpl channelImpl = (ChannelImpl) channel;
                 try {
-                    channelImpl.sent(netPackage);
+                    channelImpl.send(netPackage);
                 } catch (Exception e) {
                     log.error("Error send broadcast", e);
                 }

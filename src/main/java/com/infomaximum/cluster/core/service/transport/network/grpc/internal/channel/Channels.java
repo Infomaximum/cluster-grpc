@@ -1,22 +1,25 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel;
 
 import com.infomaximum.cluster.Node;
-import com.infomaximum.cluster.UpdateNodeConnect;
 import com.infomaximum.cluster.core.service.transport.TransportManager;
 import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.client.Clients;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.service.PingPongService;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit.Builder.Server;
+import com.infomaximum.cluster.event.CauseNodeDisconnect;
+import com.infomaximum.cluster.event.UpdateNodeConnect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManagerFactory;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +36,7 @@ public class Channels implements AutoCloseable {
     private final Clients clients;
     private final GrpcServer grpcServer;
 
-//    private final PingPongService pingPongService;
+    private final PingPongService pingPongService;
 
     private Channels(Builder builder) {
         this.transportManager = builder.grpcNetworkTransit.transportManager;
@@ -47,7 +50,7 @@ public class Channels implements AutoCloseable {
         } else {
             this.grpcServer = null;
         }
-//        this.pingPongService = new PingPongService();
+        this.pingPongService = new PingPongService(channelList, builder.pingPongInterval, builder.pingPongTimeout);
     }
 
 
@@ -72,7 +75,7 @@ public class Channels implements AutoCloseable {
             }
 
             try {
-                channel.sent(netPackage);
+                channel.send(netPackage);
                 return;
             } catch (Exception e) {
                 //Пробуем найти другой канал
@@ -87,9 +90,9 @@ public class Channels implements AutoCloseable {
         }
     }
 
-    public void fireEventDisconnectNode(Node node) {
+    public void fireEventDisconnectNode(Node node, CauseNodeDisconnect cause) {
         for(UpdateNodeConnect updateNodeConnect: transportManager.updateNodeConnectListeners) {
-            updateNodeConnect.onDisconnect(node);
+            updateNodeConnect.onDisconnect(node, cause);
         }
     }
 
@@ -110,8 +113,8 @@ public class Channels implements AutoCloseable {
         channelList.addChannel(channel);
     }
 
-    public void unRegisterChannel(Channel channel) {
-        channelList.removeChannel(channel);
+    public void unRegisterChannel(Channel channel, CauseNodeDisconnect cause) {
+        channelList.removeChannel(channel, cause);
     }
 
     public List<Node> getRemoteNodes() {
@@ -129,13 +132,17 @@ public class Channels implements AutoCloseable {
         clients.start();
     }
 
+    public PingPongService getPingPongService() {
+        return pingPongService;
+    }
+
     public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
         return transportManager.cluster.getUncaughtExceptionHandler();
     }
 
     @Override
     public void close() {
-//        pingPongService.close();
+        pingPongService.close();
         if (grpcServer != null) {
             grpcServer.close();
         }
@@ -153,6 +160,8 @@ public class Channels implements AutoCloseable {
         private Server server;
         private List<GrpcRemoteNode> targets;
 
+        private Duration pingPongInterval;
+        private Duration pingPongTimeout;
 
         public Builder(GrpcNetworkTransitImpl grpcNetworkTransit) {
             this.grpcNetworkTransit = grpcNetworkTransit;
@@ -172,6 +181,12 @@ public class Channels implements AutoCloseable {
 
         public Builder withTargets(List<GrpcRemoteNode> targets) {
             this.targets = targets;
+            return this;
+        }
+
+        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+            this.pingPongInterval = interval;
+            this.pingPongTimeout = timeout;
             return this;
         }
 

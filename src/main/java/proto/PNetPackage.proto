@@ -11,6 +11,8 @@ message PNetPackage  {
     PNetPackageResponse response = 4;
     PNetPackageProcessing responseProcessing = 5;
     PNetPackageUpdateNode updateNode = 6;
+    PNetPackagePing ping = 7;
+    PNetPackagePong pong = 8;
   }
 }
 
@@ -59,4 +61,12 @@ message PNetPackageResponse {
 
 message PNetPackageProcessing {
   int32 packageId = 1;
+}
+
+message PNetPackagePing  {
+  sfixed64 time = 1;
+}
+
+message PNetPackagePong  {
+  sfixed64 time = 1;
 }

@@ -51,7 +51,7 @@ public abstract class ChannelImpl implements Channel {
         remoteNode.setComponents(components);
     }
 
-    public void sent(PNetPackage value){
+    public void send(PNetPackage value){
         if (log.isTraceEnabled()) {
             log.trace("Send packet: {} to channel: {}", PackageLog.toString(value), this);
         }
@@ -68,6 +68,8 @@ public abstract class ChannelImpl implements Channel {
     public void destroy(){
         available = false;
     }
+
+    public abstract void kill(Throwable throwable);
 
     @Override
     public String toString() {

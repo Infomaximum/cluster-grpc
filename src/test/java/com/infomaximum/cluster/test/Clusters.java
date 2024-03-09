@@ -3,10 +3,10 @@ package com.infomaximum.cluster.test;
 import com.infomaximum.cluster.Cluster;
 import com.infomaximum.cluster.ComponentBuilder;
 import com.infomaximum.cluster.NetworkTransit;
-import com.infomaximum.cluster.UpdateNodeConnect;
 import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
+import com.infomaximum.cluster.event.UpdateNodeConnect;
 import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import com.infomaximum.cluster.test.utils.FinderFreeHostPort;
 import com.infomaximum.cluster.test.utils.ReaderResources;
@@ -102,6 +102,9 @@ public class Clusters implements AutoCloseable {
         private Duration timeoutConfirmationWaitResponse1;
 
         private Duration timeoutConfirmationWaitResponse2;
+
+        private Duration pingPongInterval;
+        private Duration pingPongTimeout;
 
         public Builder(int communicationModeId) {
             this(CommunicationMode.get(communicationModeId));
@@ -208,12 +211,22 @@ public class Clusters implements AutoCloseable {
             return this;
         }
 
+        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+            this.pingPongInterval = interval;
+            this.pingPongTimeout = timeout;
+            return this;
+        }
+
         public Clusters build() {
             if (timeoutConfirmationWaitResponse1 != null) {
                 builderNetworkTransit1.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse1);
             }
             if (timeoutConfirmationWaitResponse2 != null) {
                 builderNetworkTransit2.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse2);
+            }
+            if (pingPongInterval != null || pingPongTimeout != null) {
+                builderNetworkTransit1.withPingPongTimeout(pingPongInterval, pingPongTimeout);
+                builderNetworkTransit2.withPingPongTimeout(pingPongInterval, pingPongTimeout);
             }
             return new Clusters(builderNetworkTransit1, updateNodeConnect1, builderNetworkTransit2, updateNodeConnect2, uncaughtExceptionHandler);
         }

@@ -19,8 +19,8 @@ public interface GrpcNetworkTransit {
 
         public static final Duration DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE = Duration.ofSeconds(20);
 
-//        public static final Duration DEFAULT_PING_PONG_INTERVAL = Duration.ofSeconds(5);
-//        public static final Duration DEFAULT_PING_PONG_TIMEOUT = Duration.ofSeconds(3);
+        public static final Duration DEFAULT_PING_PONG_INTERVAL = Duration.ofSeconds(5);
+        public static final Duration DEFAULT_PING_PONG_TIMEOUT = Duration.ofSeconds(3);
 
         public final String nodeName;
         private Server server;;
@@ -28,8 +28,8 @@ public interface GrpcNetworkTransit {
 
         private Duration timeoutConfirmationWaitResponse;
 
-//        private Duration pingPongInterval;
-//        private Duration pingPongTimeout;
+        private Duration pingPongInterval;
+        private Duration pingPongTimeout;
 
         private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
         private byte[] fileCertChain;
@@ -44,8 +44,8 @@ public interface GrpcNetworkTransit {
             this.nodeName = nodeName;
             this.targets = new ArrayList<>();
             this.timeoutConfirmationWaitResponse = DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE;
-//            this.pingPongInterval = DEFAULT_PING_PONG_INTERVAL;
-//            this.pingPongTimeout = DEFAULT_PING_PONG_TIMEOUT;
+            this.pingPongInterval = DEFAULT_PING_PONG_INTERVAL;
+            this.pingPongTimeout = DEFAULT_PING_PONG_TIMEOUT;
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         }
 
@@ -77,11 +77,11 @@ public interface GrpcNetworkTransit {
             return this;
         }
 
-//        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
-//            this.pingPongInterval = interval;
-//            this.pingPongTimeout = timeout;
-//            return this;
-//        }
+        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+            this.pingPongInterval = interval;
+            this.pingPongTimeout = timeout;
+            return this;
+        }
 
         public Server getServer() {
             return server;
@@ -95,13 +95,13 @@ public interface GrpcNetworkTransit {
             return timeoutConfirmationWaitResponse;
         }
 
-//        public Duration getPingPongInterval() {
-//            return pingPongInterval;
-//        }
-//
-//        public Duration getPingPongTimeout() {
-//            return pingPongTimeout;
-//        }
+        public Duration getPingPongInterval() {
+            return pingPongInterval;
+        }
+
+        public Duration getPingPongTimeout() {
+            return pingPongTimeout;
+        }
 
         public GrpcNetworkTransitImpl build(TransportManager transportManager) {
             return new GrpcNetworkTransitImpl(this, transportManager, fileCertChain, filePrivateKey, trustStore, uncaughtExceptionHandler);
