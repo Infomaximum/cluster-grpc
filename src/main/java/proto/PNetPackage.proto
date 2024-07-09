@@ -37,6 +37,7 @@ message PNetPackageComponent  {
   string uuid = 1;
   int32 id = 2;
   repeated string classNameRControllers = 3;
+  string version = 4;
 }
 
 message PNetPackageUpdateNode  {
