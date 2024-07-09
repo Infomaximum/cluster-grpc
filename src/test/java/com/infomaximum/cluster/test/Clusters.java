@@ -128,8 +128,8 @@ public class Clusters implements AutoCloseable {
             int port1 = FinderFreeHostPort.find();
             int port2 = FinderFreeHostPort.find();
 
-            builderNetworkTransit1 = new GrpcNetworkTransit.Builder("node1", uncaughtExceptionHandler);
-            builderNetworkTransit2 = new GrpcNetworkTransit.Builder("node2", uncaughtExceptionHandler);
+            builderNetworkTransit1 = new GrpcNetworkTransit.Builder(uncaughtExceptionHandler).withNodeName("node1");
+            builderNetworkTransit2 = new GrpcNetworkTransit.Builder(uncaughtExceptionHandler).withNodeName("node2");
 
             if (mode == CommunicationMode.TWO_WAY) {
                 builderNetworkTransit1.withServer(new GrpcNetworkTransit.Builder.Server(port1));
