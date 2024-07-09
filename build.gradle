@@ -24,7 +24,7 @@ if (project.hasProperty('ossrhUsername')) {
 }
 
 group 'com.infomaximum'
-version '0.1.3p16'
+version '0.1.3p17'
 
 ext.moduleName = 'com.infomaximum.cluster.grpc'
 
@@ -113,7 +113,7 @@ jar {
 
 dependencies {
 
-    compileOnly 'com.infomaximum:cluster:1.1.8p8'
+    compileOnly 'com.infomaximum:cluster:1.1.8p9'
 //    compileOnly project(':cluster')
 
     implementation('io.grpc:grpc-netty-shaded:1.50.3'){
