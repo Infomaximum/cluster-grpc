@@ -9,6 +9,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.stru
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshakeNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageUpdateNode;
+import com.infomaximum.cluster.struct.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,7 @@ public class ConvertProto {
 
     private final static Logger log = LoggerFactory.getLogger(ConvertProto.class);
 
-    public static RNode convert(PNetPackageHandshakeNode handshakeNode){
+    public static RNode convert(PNetPackageHandshakeNode handshakeNode) {
         UUID nodeRuntimeId = new UUID(handshakeNode.getRuntimeIdMostSigBits(), handshakeNode.getRuntimeIdLeastSigBits());
 
         Node node = new GrpcNode.Builder(handshakeNode.getName(), nodeRuntimeId).build();
@@ -43,9 +44,10 @@ public class ConvertProto {
         return components;
     }
 
-    private static LocationRuntimeComponent convert(UUID nodeRuntimeId, PNetPackageComponent netComponent){
+    private static LocationRuntimeComponent convert(UUID nodeRuntimeId, PNetPackageComponent netComponent) {
         String uuid = netComponent.getUuid();
         int id = netComponent.getId();
+        Version version = "".equals(netComponent.getVersion()) ? null : Version.parse(netComponent.getVersion());
 
         HashSet<Class<? extends RController>> classRControllers = new HashSet<>();
         for (int i = 0; i < netComponent.getClassNameRControllersCount(); i++) {
@@ -58,6 +60,6 @@ public class ConvertProto {
                 log.debug("Unknown controller: {} in component: {}", classNameRController, uuid);
             }
         }
-        return new LocationRuntimeComponent(nodeRuntimeId, new RuntimeComponentInfo(id, uuid, classRControllers));
+        return new LocationRuntimeComponent(nodeRuntimeId, new RuntimeComponentInfo(id, uuid, version, classRControllers));
     }
 }
