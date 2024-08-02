@@ -221,6 +221,8 @@ public class Client implements AutoCloseable {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
         } else if (requestPackage.hasResponseProcessing()) {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
+        } else if (requestPackage.hasBody()) {
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getBody());
         } else if (requestPackage.hasUpdateNode()) {
             clientChannel.handleIncomingPacket(requestPackage.getUpdateNode());
         } else if (requestPackage.hasPing()) {

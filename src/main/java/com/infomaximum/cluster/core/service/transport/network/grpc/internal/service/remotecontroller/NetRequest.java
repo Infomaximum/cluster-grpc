@@ -1,12 +1,16 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller;
 
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageResponse;
+import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransport;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public record NetRequest(UUID targetNodeRuntimeId, int componentId, String rControllerClassName, int methodKey, Timeout timeout, CompletableFuture<PNetPackageResponse> completableFuture) {
+public record NetRequest(UUID targetNodeRuntimeId,
+                         int componentId,
+                         String rControllerClassName,
+                         int methodKey,
+                         Timeout timeout,
+                         CompletableFuture<ComponentExecutorTransport.Result> completableFuture) {
 }
 
 class Timeout {

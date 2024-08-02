@@ -129,6 +129,8 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
         } else if (requestPackage.hasResponseProcessing()) {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponseProcessing());
+        }  else if (requestPackage.hasBody()) {
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getBody());
         } else if (requestPackage.hasUpdateNode()) {
             channelServer.handleIncomingPacket(requestPackage.getUpdateNode());
         } else if (requestPackage.hasPing()) {
