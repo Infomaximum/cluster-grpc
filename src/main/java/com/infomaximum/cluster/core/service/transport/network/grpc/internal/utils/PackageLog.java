@@ -2,6 +2,8 @@ package com.infomaximum.cluster.core.service.transport.network.grpc.internal.uti
 
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 
+import java.util.UUID;
+
 public class PackageLog {
 
     public static String toString(PNetPackage value) {
@@ -21,7 +23,9 @@ public class PackageLog {
             return toString(value.getHandshakeRequest());
         } else if (value.hasHandshakeResponse()) {
             return toString(value.getHandshakeResponse());
-        } else {
+        } else if (value.hasBody()) {
+            return toString(value.getBody());
+        }  else {
             throw new RuntimeException("Unknown package: " + value);
         }
     }
@@ -62,5 +66,13 @@ public class PackageLog {
 
     public static String toString(PNetPackagePong value) {
         return "PNetPackagePong{}";
+    }
+
+    public static String toString(PNetPackageBody value) {
+        return "PNetPackageBody{" +
+                "uuid=" + new UUID(value.getUuidLeastSigBits(), value.getUuidMostSigBits()) +
+                ",part=" + value.getPart() +
+                ",total=" + value.getTotal() +
+                "}";
     }
 }

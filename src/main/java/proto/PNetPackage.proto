@@ -11,8 +11,9 @@ message PNetPackage  {
     PNetPackageResponse response = 4;
     PNetPackageProcessing responseProcessing = 5;
     PNetPackageUpdateNode updateNode = 6;
-    PNetPackagePing ping = 7;
-    PNetPackagePong pong = 8;
+    PNetPackageBody body = 7;
+    PNetPackagePing ping = 8;
+    PNetPackagePong pong = 9;
   }
 }
 
@@ -50,13 +51,13 @@ message PNetPackageRequest {
   int32 targetComponentId = 2;
   string rControllerClassName = 3;
   int32 methodKey = 4;
-  repeated bytes args = 5;
+  repeated PNetPackageBody args = 5;
 }
 
 message PNetPackageResponse {
   int32 packageId = 1;
 
-  bytes result = 2;
+  PNetPackageBody result = 2;
   bytes exception = 3;
 }
 
@@ -70,4 +71,12 @@ message PNetPackagePing  {
 
 message PNetPackagePong  {
   sfixed64 time = 1;
+}
+
+message PNetPackageBody {
+  uint64 uuidMostSigBits = 1;//uuid
+  uint64 uuidLeastSigBits = 2;//uuid
+  bytes body = 3;
+  int32 part = 4;
+  int32 total = 5;
 }

@@ -1,11 +1,11 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller;
 
-import com.google.protobuf.ByteString;
 import com.infomaximum.cluster.core.service.transport.executor.ComponentExecutorTransport;
 import com.infomaximum.cluster.core.service.transport.network.RemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.Channel;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.ChannelImpl;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageBodyUtils;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.struct.Component;
@@ -14,9 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,6 +29,8 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     private final AtomicInteger ids;
     private final ConcurrentHashMap<Integer, NetRequest> requests;
 
+    private final ConcurrentHashMap<UUID, BodyProcess> bodyProcessMap;
+
     private final ScheduledExecutorService scheduledServiceWaitNetExecute;
 
     private final ConcurrentHashMap<WaitLocalExecute, WaitLocalExecuteResult> waitLocalExecuteRequest;
@@ -40,6 +40,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         this.grpcNetworkTransit = grpcNetworkTransit;
         this.ids = new AtomicInteger();
         this.requests = new ConcurrentHashMap<>();
+        this.bodyProcessMap = new ConcurrentHashMap<>();
 
         this.scheduledServiceWaitNetExecute = Executors.newSingleThreadScheduledExecutor();
         this.scheduledServiceWaitNetExecute.scheduleWithFixedDelay(() -> checkTimeoutRequest(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis()/3, TimeUnit.MILLISECONDS);
@@ -56,7 +57,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     @Override
     public ComponentExecutorTransport.Result request(Component sourceComponent, UUID targetNodeRuntimeId, int targetComponentId, String rControllerClassName, int methodKey, byte[][] args) throws Exception {
         int packageId = nextPackageId();
-        CompletableFuture<PNetPackageResponse> completableFuture = new CompletableFuture<>();
+        CompletableFuture<ComponentExecutorTransport.Result> completableFuture = new CompletableFuture<>();
 
         //Формируем пакет-запрос
         PNetPackageRequest.Builder builderPackageRequest = PNetPackageRequest.newBuilder()
@@ -64,37 +65,54 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
                 .setTargetComponentId(targetComponentId)
                 .setRControllerClassName(rControllerClassName)
                 .setMethodKey(methodKey);
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                builderPackageRequest.addArgs(ByteString.copyFrom(args[i]));
-            }
-        }
-        PNetPackage netPackage = PNetPackage.newBuilder().setRequest(builderPackageRequest).build();
+
+        //Формируем список пакетов-запросов, с учетом размера аргументов
+        PNetPackage[] pNetPackages = PackageBodyUtils.getPackages(args, builderPackageRequest);
 
         //Отправляем, исходим из того, что, может отправиться несколько копий пакета, на другой стороне нужна фильтрация
         requests.put(packageId, new NetRequest(targetNodeRuntimeId, targetComponentId, rControllerClassName, methodKey, new Timeout(countTimeFail()), completableFuture));
         try {
-            grpcNetworkTransit.getChannels().sendPacketWithRepeat(targetNodeRuntimeId, netPackage);
+            for (PNetPackage pNetPackage : pNetPackages) {
+                grpcNetworkTransit.getChannels().sendPacketWithRepeat(targetNodeRuntimeId, pNetPackage);
+            }
         } catch (Exception e) {
             requests.remove(packageId);
             throw e;
         }
 
-        PNetPackageResponse netPackageResponse = completableFuture.get();
-
-        if (!netPackageResponse.getException().isEmpty()) {
-            return new ComponentExecutorTransport.Result(null, netPackageResponse.getException().toByteArray());
-        } else {
-            return new ComponentExecutorTransport.Result(netPackageResponse.getResult().toByteArray(), null);
-        }
+        return completableFuture.get();
     }
 
     public void handleIncomingPacket(PNetPackageResponse response) {
-        NetRequest netRequest = requests.remove(response.getPackageId());
+        int packageId = response.getPackageId();
+        NetRequest netRequest = requests.remove(packageId);
         if (netRequest == null) {
             log.debug("Incoming unknown package: {}", PackageLog.toString(response));
         } else {
-            netRequest.completableFuture().complete(response);
+            PNetPackageBody responseBody = response.getResult();
+            UUID uuid = PackageBodyUtils.getUuid(responseBody);
+            if (uuid != null) {
+                BodyProcess bodyProcess = bodyProcessMap.computeIfAbsent(uuid,
+                        u -> new BodyProcess(uuid, responseBody.getTotal()));
+                bodyProcess.setPackageId(packageId);
+                bodyProcess.setEndConsumer(
+                        body -> {
+                            NetRequest completeRequest = requests.remove(packageId);
+                            // Если Request завершился по тайм-ауту, то в мапе его уже не будет
+                            if (completeRequest != null) {
+                                completeRequest.completableFuture().complete(new ComponentExecutorTransport.Result(body, null));
+                            }
+                            bodyProcessMap.remove(uuid);
+                        });
+                requests.put(packageId, netRequest);
+                // bodyProcess.put() должен выполняться последним, т.к. в нем дергается consumer
+                bodyProcess.put(responseBody);
+            } else {
+                ComponentExecutorTransport.Result result = !response.getException().isEmpty() ?
+                        new ComponentExecutorTransport.Result(null, response.getException().toByteArray()) :
+                        new ComponentExecutorTransport.Result(response.getResult().getBody().toByteArray(), null);
+                netRequest.completableFuture().complete(result);
+            }
         }
     }
 
@@ -111,6 +129,19 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         return System.currentTimeMillis() + grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis();
     }
 
+    public void handleIncomingPacket(PNetPackageBody packageBody) {
+        UUID uuid = new UUID(packageBody.getUuidLeastSigBits(), packageBody.getUuidMostSigBits());
+        BodyProcess bodyProcess = bodyProcessMap.computeIfAbsent(uuid,
+                u -> new BodyProcess(uuid, packageBody.getTotal()));
+        bodyProcess.put(packageBody);
+        if (!bodyProcess.isEnd()) {
+            NetRequest netRequest = requests.get(bodyProcess.getPackageId());
+            if (netRequest != null) {
+                netRequest.timeout().timeFail = countTimeFail();
+            }
+        }
+    }
+
     public void handleIncomingPacket(PNetPackageRequest request, ChannelImpl channel) {
         UUID remoteNodeRuntimeId = channel.remoteNode.node.getRuntimeId();
         int packageId = request.getPackageId();
@@ -125,36 +156,81 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
             }
             waitLocalExecuteRequest.put(waitLocalExecute, waitLocalExecuteResult);
         }
-
-
-        byte[][] byteArgs = new byte[request.getArgsCount()][];
-        for (int i = 0; i < byteArgs.length; i++) {
-            byteArgs[i] = request.getArgs(i).toByteArray();
+        ComponentExecutorTransport.Result result;
+        try {
+            byte[][] byteArgs = getArgs(request);
+            result = grpcNetworkTransit.transportManager.localRequest(
+                    request.getTargetComponentId(),
+                    request.getRControllerClassName(),
+                    request.getMethodKey(),
+                    byteArgs
+            );
+        } catch (TimeoutException e) {
+            Exception exception = grpcNetworkTransit.transportManager.getExceptionBuilder().buildTransitRequestException(
+                    remoteNodeRuntimeId,
+                    request.getTargetComponentId(),
+                    request.getRControllerClassName(),
+                    request.getMethodKey(),
+                    new RuntimeException("Timeout arguments wait.")
+            );
+            result = new ComponentExecutorTransport.Result(null,
+                    grpcNetworkTransit.transportManager.getRemotePackerObject().serialize(null, Throwable.class, exception));
         }
-        ComponentExecutorTransport.Result result = grpcNetworkTransit.transportManager.localRequest(
-                request.getTargetComponentId(),
-                request.getRControllerClassName(),
-                request.getMethodKey(),
-                byteArgs
-        );
 
         //Ставим флаг, что запрос выполнился
         waitLocalExecuteResult.setEndTime(Instant.now());
 
         PNetPackageResponse.Builder responseBuilder = PNetPackageResponse.newBuilder()
                 .setPackageId(packageId);
-        if (result.exception() != null) {
-            responseBuilder.setException(ByteString.copyFrom(result.exception()));
-        } else {
-            responseBuilder.setResult(ByteString.copyFrom(result.value()));
-        }
 
-        PNetPackage responseNetPackage = PNetPackage.newBuilder().setResponse(responseBuilder).build();
-        try {
-            grpcNetworkTransit.getChannels().sendPacketWithRepeat(remoteNodeRuntimeId, responseNetPackage);
-        } catch (Exception e) {
-            log.debug("Exception send response package: {}", PackageLog.toString(responseNetPackage));
+        PNetPackage[] packages = PackageBodyUtils.getPackages(result, responseBuilder);
+        for (PNetPackage pNetPackage : packages) {
+            try {
+                grpcNetworkTransit.getChannels().sendPacketWithRepeat(remoteNodeRuntimeId, pNetPackage);
+            } catch (Exception e) {
+                log.debug("Exception send package: {}", PackageLog.toString(pNetPackage), e);
+                // Если мы не смогли отправить часть, то отправлять остальную бессмысленно
+                break;
+            }
         }
+    }
+
+    public byte[][] getArgs(PNetPackageRequest request) throws TimeoutException {
+        int argsWaitCount = 0;
+        for (PNetPackageBody pNetPackageBody : request.getArgsList()) {
+            if (PackageBodyUtils.getUuid(pNetPackageBody) != null) {
+                argsWaitCount++;
+            }
+        }
+        CountDownLatch countDownLatch = (argsWaitCount != 0) ? new CountDownLatch(argsWaitCount) : null;
+        byte[][] byteArgs = new byte[request.getArgsCount()][];
+        for (int i = 0; i < byteArgs.length; i++) {
+            PNetPackageBody packageBody = request.getArgs(i);
+            UUID uuid = PackageBodyUtils.getUuid(packageBody);
+            if (uuid != null) {
+                final int index = i;
+                BodyProcess bodyProcess = bodyProcessMap.computeIfAbsent(uuid, u -> new BodyProcess(uuid, packageBody.getTotal()));
+                bodyProcess.setPackageId(request.getPackageId());
+                bodyProcess.setEndConsumer(
+                        body -> {
+                            byteArgs[index] = body;
+                            bodyProcessMap.remove(uuid);
+                            countDownLatch.countDown();
+                        });
+            } else {
+                byteArgs[i] = packageBody.getBody().toByteArray();
+            }
+        }
+        if (countDownLatch != null) {
+            try {
+                if (!countDownLatch.await(grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis(), TimeUnit.MILLISECONDS)) {
+                    throw new TimeoutException();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return byteArgs;
     }
 
     public void disconnectChannel(Channel channel) {
@@ -196,13 +272,10 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
                 new RuntimeException("Fire error network request, packageId: " + packageId)
         );
 
-        PNetPackageResponse pNetPackageResponse = PNetPackageResponse.newBuilder()
-                .setPackageId(packageId)
-                .setException(ByteString.copyFrom(
-                        grpcNetworkTransit.transportManager.getRemotePackerObject().serialize(null, Throwable.class, exception)
-                )).build();
-
-        netRequest.completableFuture().complete(pNetPackageResponse);
+        byte[] exceptionBytes = grpcNetworkTransit.transportManager
+                .getRemotePackerObject()
+                .serialize(null, Throwable.class, exception);
+        netRequest.completableFuture().complete(new ComponentExecutorTransport.Result(null, exceptionBytes));
     }
 
     private void sendWaitResponsePackets(){
