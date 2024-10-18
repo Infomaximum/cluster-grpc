@@ -207,9 +207,15 @@ public class Client implements AutoCloseable {
             log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), clientChannel);
         }
 
-        //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
-        PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
-        channelRequestObserver.onNext(netPackageUpdateNode);
+        try {
+            //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
+            PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
+            channelRequestObserver.onNext(netPackageUpdateNode);
+        } catch (IllegalStateException e) {
+            log.error("Error init channel", e);
+            channels.unRegisterChannel(clientChannel, new CauseNodeDisconnect(CauseNodeDisconnect.Type.EXCEPTION, e));
+            return null;
+        }
 
         return clientChannel;
     }
