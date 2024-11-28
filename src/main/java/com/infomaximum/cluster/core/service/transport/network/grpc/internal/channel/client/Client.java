@@ -221,8 +221,12 @@ public class Client implements AutoCloseable {
     }
 
     private void handleIncomingPacket(PNetPackage requestPackage) {
+        ChannelImpl channel = clientChannel;
+        if (channel == null) { // Канал может быть закрыт в другом потоке
+            return;
+        }
         if (requestPackage.hasRequest()) {//Пришел запрос
-            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), clientChannel);
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), channel);
         } else if (requestPackage.hasResponse()) {//Пришел ответ
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
         } else if (requestPackage.hasResponseProcessing()) {
@@ -230,13 +234,13 @@ public class Client implements AutoCloseable {
         } else if (requestPackage.hasBody()) {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getBody());
         } else if (requestPackage.hasUpdateNode()) {
-            clientChannel.handleIncomingPacket(requestPackage.getUpdateNode());
+            channel.handleIncomingPacket(requestPackage.getUpdateNode());
         } else if (requestPackage.hasPing()) {
-            channels.getPingPongService().handleIncomingPing(clientChannel, requestPackage.getPing());
+            channels.getPingPongService().handleIncomingPing(channel, requestPackage.getPing());
         } else if (requestPackage.hasPong()) {
-            channels.getPingPongService().handleIncomingPong(clientChannel, requestPackage.getPong());
+            channels.getPingPongService().handleIncomingPong(channel, requestPackage.getPong());
         } else {
-            log.error("Unknown state, channel: {}, packet: {}. Disconnect", clientChannel, requestPackage.toString());
+            log.error("Unknown state, channel: {}, packet: {}. Disconnect", channel, requestPackage.toString());
             //TODO надо переподнимать соединение, а не падать
             grpcNetworkTransit.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new RuntimeException("TODO: need reconnect"));
         }
