@@ -28,6 +28,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
     private final GrpcPoolExecutor grpcPoolExecutor;
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+    private volatile ChannelServer serverChannel;
 
     public PServiceExchangeImpl(Channels channels) {
         GrpcNetworkTransitImpl grpcNetworkTransit = (GrpcNetworkTransitImpl) channels.transportManager.networkTransit;
@@ -41,23 +42,23 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
     @Override
     public StreamObserver<PNetPackage> exchange(StreamObserver<PNetPackage> responseObserver) {
-        final ChannelServer[] serverChannel = {null};
+        serverChannel = null;
 
         StreamObserver<PNetPackage> requestObserver = new StreamObserver<PNetPackage>() {
 
             @Override
             public void onNext(PNetPackage requestPackage) {
                 try {
-                    if (serverChannel[0] != null && log.isTraceEnabled()) {
-                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
+                    if (serverChannel != null && log.isTraceEnabled()) {
+                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel);
                     }
 
-                    if (serverChannel[0] == null) {
-                        serverChannel[0] = initChannel(responseObserver, requestPackage);
+                    if (serverChannel == null) {
+                        serverChannel = initChannel(responseObserver, requestPackage);
                     } else {
                         grpcPoolExecutor.execute(() -> {
                             try {
-                                handleIncomingPacket(serverChannel[0], requestPackage);
+                                handleIncomingPacket(requestPackage);
                             } catch (Throwable t) {
                                 uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
                             }
@@ -72,7 +73,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             public void onError(Throwable throwable) {
                 CauseNodeDisconnect.Type typeCause = CauseNodeDisconnect.Type.EXCEPTION;
                 try {
-                    destroyChannel(serverChannel, new CauseNodeDisconnect(typeCause, throwable));
+                    destroyChannel(new CauseNodeDisconnect(typeCause, throwable));
                     log.error("onError", throwable);
                 } catch (Throwable t) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
@@ -82,7 +83,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             @Override
             public void onCompleted() {
                 try {
-                    destroyChannel(serverChannel, CauseNodeDisconnect.NORMAL);
+                    destroyChannel(CauseNodeDisconnect.NORMAL);
                     log.error("onCompleted");
                 } catch (Throwable t) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
@@ -122,9 +123,13 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
     }
 
 
-    private void handleIncomingPacket(ChannelServer channelServer, PNetPackage requestPackage) {
+    private void handleIncomingPacket(PNetPackage requestPackage) {
+        ChannelImpl channel = serverChannel;
+        if (channel == null) { // Канал может быть закрыт в другом потоке
+            return;
+        }
         if (requestPackage.hasRequest()) {
-            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), channelServer);
+            remoteControllerRequest.handleIncomingPacket(requestPackage.getRequest(), channel);
         } else if (requestPackage.hasResponse()) {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getResponse());
         } else if (requestPackage.hasResponseProcessing()) {
@@ -132,22 +137,22 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         }  else if (requestPackage.hasBody()) {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getBody());
         } else if (requestPackage.hasUpdateNode()) {
-            channelServer.handleIncomingPacket(requestPackage.getUpdateNode());
+            channel.handleIncomingPacket(requestPackage.getUpdateNode());
         } else if (requestPackage.hasPing()) {
-            channels.getPingPongService().handleIncomingPing(channelServer, requestPackage.getPing());
+            channels.getPingPongService().handleIncomingPing(channel, requestPackage.getPing());
         } else if (requestPackage.hasPong()) {
-            channels.getPingPongService().handleIncomingPong(channelServer, requestPackage.getPong());
+            channels.getPingPongService().handleIncomingPong(channel, requestPackage.getPong());
         } else {
-            log.error("Unknown state, channel: {}, packet: {}. Disconnect", channelServer, requestPackage.toString());
+            log.error("Unknown state, channel: {}, packet: {}. Disconnect", channel, requestPackage.toString());
             //TODO надо переподнимать соединение, а не падать
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
         }
     }
 
-    private void destroyChannel(ChannelImpl[] serverChannel, CauseNodeDisconnect cause) {
-        if (serverChannel[0] != null) {
-            channels.unRegisterChannel(serverChannel[0], cause);
-            serverChannel[0] = null;
+    private void destroyChannel(CauseNodeDisconnect cause) {
+        if (serverChannel != null) {
+            channels.unRegisterChannel(serverChannel, cause);
+            serverChannel = null;
         }
     }
 }
