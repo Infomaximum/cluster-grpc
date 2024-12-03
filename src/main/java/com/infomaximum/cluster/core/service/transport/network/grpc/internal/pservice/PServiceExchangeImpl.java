@@ -28,7 +28,6 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
     private final GrpcPoolExecutor grpcPoolExecutor;
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
-    private volatile ChannelServer serverChannel;
 
     public PServiceExchangeImpl(Channels channels) {
         GrpcNetworkTransitImpl grpcNetworkTransit = (GrpcNetworkTransitImpl) channels.transportManager.networkTransit;
@@ -42,23 +41,23 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
     @Override
     public StreamObserver<PNetPackage> exchange(StreamObserver<PNetPackage> responseObserver) {
-        serverChannel = null;
+        final ChannelServer[] serverChannel = {null};
 
         StreamObserver<PNetPackage> requestObserver = new StreamObserver<PNetPackage>() {
 
             @Override
             public void onNext(PNetPackage requestPackage) {
                 try {
-                    if (serverChannel != null && log.isTraceEnabled()) {
-                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel);
+                    if (serverChannel[0] != null && log.isTraceEnabled()) {
+                        log.trace("Incoming packet: {} to channel: {}", PackageLog.toString(requestPackage), serverChannel[0]);
                     }
 
-                    if (serverChannel == null) {
-                        serverChannel = initChannel(responseObserver, requestPackage);
+                    if (serverChannel[0] == null) {
+                        serverChannel[0] = initChannel(responseObserver, requestPackage);
                     } else {
                         grpcPoolExecutor.execute(() -> {
                             try {
-                                handleIncomingPacket(requestPackage);
+                                handleIncomingPacket(serverChannel, requestPackage);
                             } catch (Throwable t) {
                                 uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
                             }
@@ -73,7 +72,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             public void onError(Throwable throwable) {
                 CauseNodeDisconnect.Type typeCause = CauseNodeDisconnect.Type.EXCEPTION;
                 try {
-                    destroyChannel(new CauseNodeDisconnect(typeCause, throwable));
+                    destroyChannel(serverChannel, new CauseNodeDisconnect(typeCause, throwable));
                     log.error("onError", throwable);
                 } catch (Throwable t) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
@@ -83,7 +82,7 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
             @Override
             public void onCompleted() {
                 try {
-                    destroyChannel(CauseNodeDisconnect.NORMAL);
+                    destroyChannel(serverChannel, CauseNodeDisconnect.NORMAL);
                     log.error("onCompleted");
                 } catch (Throwable t) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), t);
@@ -123,8 +122,8 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
     }
 
 
-    private void handleIncomingPacket(PNetPackage requestPackage) {
-        ChannelImpl channel = serverChannel;
+    private void handleIncomingPacket(ChannelServer[] serverChannel, PNetPackage requestPackage) {
+        ChannelImpl channel = serverChannel[0];
         if (channel == null) { // Канал может быть закрыт в другом потоке
             return;
         }
@@ -149,10 +148,10 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         }
     }
 
-    private void destroyChannel(CauseNodeDisconnect cause) {
-        if (serverChannel != null) {
-            channels.unRegisterChannel(serverChannel, cause);
-            serverChannel = null;
+    private void destroyChannel(ChannelImpl[] serverChannel, CauseNodeDisconnect cause) {
+        if (serverChannel[0] != null) {
+            channels.unRegisterChannel(serverChannel[0], cause);
+            serverChannel[0] = null;
         }
     }
 }
