@@ -30,7 +30,7 @@ ext.moduleName = 'com.infomaximum.cluster.grpc'
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -113,7 +113,7 @@ jar {
 
 dependencies {
 
-    compileOnly 'com.infomaximum:cluster:1.1.10'
+    compileOnly 'com.infomaximum:cluster:1.1.11'
 //    compileOnly project(':cluster')
 
     implementation('io.grpc:grpc-netty-shaded:1.50.3'){

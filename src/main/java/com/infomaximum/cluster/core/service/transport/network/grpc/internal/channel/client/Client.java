@@ -14,7 +14,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.util
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.event.CauseNodeDisconnect;
-import com.infomaximum.cluster.utils.ExecutorUtil;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.ExecutorUtil;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;

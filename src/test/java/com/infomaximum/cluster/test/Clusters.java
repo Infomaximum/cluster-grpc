@@ -10,7 +10,7 @@ import com.infomaximum.cluster.event.UpdateNodeConnect;
 import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import com.infomaximum.cluster.test.utils.FinderFreeHostPort;
 import com.infomaximum.cluster.test.utils.ReaderResources;
-import com.infomaximum.cluster.utils.ExecutorUtil;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.ExecutorUtil;
 
 import java.time.Duration;
 
