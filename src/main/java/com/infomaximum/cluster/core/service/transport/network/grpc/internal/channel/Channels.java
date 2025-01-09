@@ -10,6 +10,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.chan
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.service.PingPongService;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.ExecutorUtil;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit.Builder.Server;
@@ -38,8 +39,11 @@ public class Channels implements AutoCloseable {
 
     private final PingPongService pingPongService;
 
+    private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
+
     private Channels(Builder builder) {
         this.transportManager = builder.grpcNetworkTransit.transportManager;
+        this.uncaughtExceptionHandler = builder.grpcNetworkTransit.getUncaughtExceptionHandler();
         this.channelList = new ChannelList(this, (GrpcRemoteControllerRequest) builder.grpcNetworkTransit.getRemoteControllerRequest());
         this.clients = new Clients(
                 builder.grpcNetworkTransit, channelList,
@@ -84,16 +88,28 @@ public class Channels implements AutoCloseable {
         }
     }
 
-    protected void fireEventConnectNode(Node node) {
-        for(UpdateNodeConnect updateNodeConnect: transportManager.updateNodeConnectListeners) {
-            updateNodeConnect.onConnect(node);
-        }
+    public void fireEventConnectNode(Node node) {
+        ExecutorUtil.executorsVirtualThreads.execute(() -> {
+            for (UpdateNodeConnect updateNodeConnect : transportManager.updateNodeConnectListeners) {
+                try {
+                    updateNodeConnect.onConnect(node);
+                } catch (Exception e) {
+                    uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
+                }
+            }
+        });
     }
 
     public void fireEventDisconnectNode(Node node, CauseNodeDisconnect cause) {
-        for(UpdateNodeConnect updateNodeConnect: transportManager.updateNodeConnectListeners) {
-            updateNodeConnect.onDisconnect(node, cause);
-        }
+        ExecutorUtil.executorsVirtualThreads.execute(() -> {
+            for (UpdateNodeConnect updateNodeConnect : transportManager.updateNodeConnectListeners) {
+                try {
+                    updateNodeConnect.onDisconnect(node, cause);
+                } catch (Exception e) {
+                    uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
+                }
+            }
+        });
     }
 
     //TODO Переписать на итераторы
