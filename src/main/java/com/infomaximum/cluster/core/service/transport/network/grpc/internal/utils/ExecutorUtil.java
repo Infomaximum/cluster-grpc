@@ -7,4 +7,6 @@ public class ExecutorUtil {
 
     public static final ExecutorService executors = Executors.newCachedThreadPool();
 
+    public static final ExecutorService executorsVirtualThreads = Executors.newVirtualThreadPerTaskExecutor();
+
 }
