@@ -93,7 +93,7 @@ public class Channels implements AutoCloseable {
             for (UpdateNodeConnect updateNodeConnect : transportManager.updateNodeConnectListeners) {
                 try {
                     updateNodeConnect.onConnect(node);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
                 }
             }
@@ -105,7 +105,7 @@ public class Channels implements AutoCloseable {
             for (UpdateNodeConnect updateNodeConnect : transportManager.updateNodeConnectListeners) {
                 try {
                     updateNodeConnect.onDisconnect(node, cause);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
                 }
             }
