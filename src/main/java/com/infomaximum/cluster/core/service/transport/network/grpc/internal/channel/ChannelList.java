@@ -77,9 +77,6 @@ public class ChannelList {
 
         log.debug("Remove channel: {}, total: {}", channel, items.size());
 
-        //Кидаем ошибку по всем ожидающим запросам
-        remoteControllerRequest.disconnectChannel(channel);
-
         //Отправляем оповещение
         if (fireEvent) {
             channels.fireEventDisconnectNode(remoteNode, cause);

@@ -233,28 +233,15 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         return byteArgs;
     }
 
-    public void disconnectChannel(Channel channel) {
-        for (Map.Entry<Integer, NetRequest> entry : requests.entrySet()) {
-            NetRequest netRequest = entry.getValue();
-            UUID remoteNodeRuntimeId = netRequest.targetNodeRuntimeId();
-            //Если активных каналов больше нет - кидаем ошибку
-            if (grpcNetworkTransit.getChannels().getChannel(remoteNodeRuntimeId) == null) {
-                int packageId = entry.getKey();
-                fireErrorNetworkRequest(packageId);
-            }
-        }
-    }
-
     private void checkTimeoutRequest() {
         try {
             long now = System.currentTimeMillis();
             for (Map.Entry<Integer, NetRequest> entry : requests.entrySet()) {
                 NetRequest netRequest = entry.getValue();
-                UUID remoteNodeRuntimeId = netRequest.targetNodeRuntimeId();
-                //Если активных каналов больше нет или вышел таймаут - кидаем ошибку
-                if (grpcNetworkTransit.getChannels().getChannel(remoteNodeRuntimeId) == null || now > netRequest.timeout().timeFail) {
+                //Если вышел таймаут - кидаем ошибку
+                if (now > netRequest.timeout().timeFail) {
                     int packageId = entry.getKey();
-                    fireErrorNetworkRequest(packageId);
+                    fireErrorNetworkRequest(packageId, "Request timed out");
                 }
             }
         } catch (Throwable e) {
@@ -262,14 +249,14 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         }
     }
 
-    private void fireErrorNetworkRequest(int packageId) {
+    private void fireErrorNetworkRequest(int packageId, String cause) {
         NetRequest netRequest = requests.remove(packageId);
         if (netRequest == null) return;
 
         UUID remoteNodeRuntimeId = netRequest.targetNodeRuntimeId();
         Exception exception = grpcNetworkTransit.transportManager.getExceptionBuilder().buildTransitRequestException(
                 remoteNodeRuntimeId, netRequest.componentId(), netRequest.rControllerClassName(), netRequest.methodKey(),
-                new RuntimeException("Fire error network request, packageId: " + packageId)
+                new RuntimeException("Fire error network request, packageId: " + packageId + ", cause: " + cause)
         );
 
         byte[] exceptionBytes = grpcNetworkTransit.transportManager
