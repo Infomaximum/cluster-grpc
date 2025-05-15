@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ChannelList {
@@ -23,21 +24,15 @@ public class ChannelList {
     public ChannelList(Channels channels, GrpcRemoteControllerRequest remoteControllerRequest) {
         this.channels = channels;
         this.remoteControllerRequest = remoteControllerRequest;
-        this.channelItems = new HashMap<>();
+        this.channelItems = new ConcurrentHashMap<>();
     }
 
     public void addChannel(Channel channel) {
         Node remoteNode = channel.getRemoteNode().node;
         UUID remoteNodeRuntimeId = remoteNode.getRuntimeId();
-        List<Channel> items = channelItems.get(remoteNodeRuntimeId);
+        List<Channel> items = channelItems.putIfAbsent(remoteNodeRuntimeId, new CopyOnWriteArrayList<>());
         if (items == null) {
-            synchronized (channelItems) {
-                items = channelItems.get(remoteNodeRuntimeId);
-                if (items == null) {
-                    items = new CopyOnWriteArrayList<>();
-                    channelItems.put(remoteNodeRuntimeId, items);
-                }
-            }
+            items = channelItems.get(remoteNodeRuntimeId);
         }
 
         boolean fireEvent = false;
