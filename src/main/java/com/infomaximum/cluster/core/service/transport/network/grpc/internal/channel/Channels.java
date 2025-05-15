@@ -83,7 +83,7 @@ public class Channels implements AutoCloseable {
                 return;
             } catch (Exception e) {
                 //Пробуем найти другой канал
-                log.debug("Error send packed: {}, find another chanel", PackageLog.toString(netPackage), e);
+                log.debug("Error send packed: {}, to node: {}, find another chanel", PackageLog.toString(netPackage), targetNodeRuntimeId, e);
             }
         }
     }

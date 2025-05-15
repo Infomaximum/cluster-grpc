@@ -43,11 +43,11 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         this.bodyProcessMap = new ConcurrentHashMap<>();
 
         this.scheduledServiceWaitNetExecute = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledServiceWaitNetExecute.scheduleWithFixedDelay(() -> checkTimeoutRequest(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis()/3, TimeUnit.MILLISECONDS);
+        this.scheduledServiceWaitNetExecute.scheduleWithFixedDelay(() -> checkTimeoutRequest(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis() / 3, TimeUnit.MILLISECONDS);
 
         this.waitLocalExecuteRequest = new ConcurrentHashMap<>();
         this.scheduledServiceWaitLocalExecute = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledServiceWaitLocalExecute.scheduleWithFixedDelay(() -> sendWaitResponsePackets(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis()/3, TimeUnit.MILLISECONDS);
+        this.scheduledServiceWaitLocalExecute.scheduleWithFixedDelay(() -> sendWaitResponsePackets(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis() / 3, TimeUnit.MILLISECONDS);
     }
 
     private int nextPackageId() {
@@ -125,7 +125,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         }
     }
 
-    private long countTimeFail(){
+    private long countTimeFail() {
         return System.currentTimeMillis() + grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis();
     }
 
@@ -265,19 +265,21 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         netRequest.completableFuture().complete(new ComponentExecutorTransport.Result(null, exceptionBytes));
     }
 
-    private void sendWaitResponsePackets(){
+    private void sendWaitResponsePackets() {
         long cleaningTime = System.currentTimeMillis() + TIME_CLEAR_REQUEST_EXECUTE;
         for (Map.Entry<WaitLocalExecute, WaitLocalExecuteResult> entry : waitLocalExecuteRequest.entrySet()) {
             WaitLocalExecute waitLocalExecute = entry.getKey();
             WaitLocalExecuteResult waitLocalExecuteResult = entry.getValue();
             if (waitLocalExecuteResult.getEndTime() == null) {
+                PNetPackageProcessing pNetPackageProcessing = PNetPackageProcessing.newBuilder()
+                        .setPackageId(waitLocalExecute.packageId())
+                        .build();
+                PNetPackage pNetPackage = PNetPackage.newBuilder().setResponseProcessing(pNetPackageProcessing).build();
                 try {
-                    PNetPackageProcessing pNetPackageProcessing = PNetPackageProcessing.newBuilder()
-                            .setPackageId(waitLocalExecute.packageId())
-                            .build();
-                    PNetPackage pNetPackage = PNetPackage.newBuilder().setResponseProcessing(pNetPackageProcessing).build();
                     grpcNetworkTransit.getChannels().sendPacket(waitLocalExecute.nodeRuntimeId(), pNetPackage, 1);
-                } catch (Exception ignore) {}
+                } catch (Exception e) {
+                    log.debug("Exception send package: {}, to node: {}", PackageLog.toString(pNetPackage), waitLocalExecute.nodeRuntimeId(), e);
+                }
             } else if (waitLocalExecuteResult.getEndTime().toEpochMilli() < cleaningTime) {
                 waitLocalExecuteRequest.remove(waitLocalExecute);
             }
