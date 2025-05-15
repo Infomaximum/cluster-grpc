@@ -30,13 +30,9 @@ public class ChannelList {
     public void addChannel(Channel channel) {
         Node remoteNode = channel.getRemoteNode().node;
         UUID remoteNodeRuntimeId = remoteNode.getRuntimeId();
-        List<Channel> items = channelItems.get(remoteNodeRuntimeId);
+        List<Channel> items = channelItems.putIfAbsent(remoteNodeRuntimeId, new CopyOnWriteArrayList<>());
         if (items == null) {
             items = channelItems.get(remoteNodeRuntimeId);
-            if (items == null) {
-                items = new CopyOnWriteArrayList<>();
-                channelItems.put(remoteNodeRuntimeId, items);
-            }
         }
 
         boolean fireEvent = false;
