@@ -103,16 +103,38 @@ public class ChannelList {
             int size = items.size();
             if (size == 0) return null;
 
-            int index = new Random().nextInt(size);
-            Channel result = null;
-            int i = 0;
-            for (Channel channel : items) {
-                if (!channel.isAvailable()) continue;
-                result = channel;
-                if (i++ == index) break;
-            }
-            return result;
+            return getRandomChannel(items);
         }
+    }
+
+    public Channel getRandomChannelWithAvailableRepeat(UUID nodeRuntimeId) {
+        List<Channel> items = channelItems.get(nodeRuntimeId);
+        if (items == null) return null;
+        synchronized (items) {
+            int size = items.size();
+            if (size == 0) return null;
+
+            for (int repeat = 0; repeat < 5; repeat++) {
+                Channel result = getRandomChannel(items);
+                if (result != null) return result;
+                try {
+                    Thread.sleep(10L);
+                } catch (InterruptedException e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+    }
+
+    private Channel getRandomChannel(List<Channel> items) {
+        int index = new Random().nextInt(items.size());
+        int i = 0;
+        for (Channel channel : items) {
+            if (!channel.isAvailable()) continue;
+            if (i++ == index) return channel;
+        }
+        return null;
     }
 
     public Set<UUID> getNodes() {

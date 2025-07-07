@@ -116,7 +116,7 @@ public class Channels implements AutoCloseable {
     public ArrayList<LocationRuntimeComponent> getComponents() {
         ArrayList<LocationRuntimeComponent> list = new ArrayList<LocationRuntimeComponent>();
         for (UUID nodeRutimeId : channelList.getNodes()) {
-            Channel channel = channelList.getRandomChannel(nodeRutimeId);
+            Channel channel = channelList.getRandomChannelWithAvailableRepeat(nodeRutimeId);
             if (channel == null) continue;
 
             RNode remoteNode = channel.getRemoteNode();
