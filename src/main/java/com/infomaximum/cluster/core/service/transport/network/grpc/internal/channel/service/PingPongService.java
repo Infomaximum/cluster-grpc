@@ -28,15 +28,20 @@ public class PingPongService {
     private final ScheduledExecutorService scheduledServicePingPongExecute;
 
     private final Duration timeout;
+    private final Duration interval;
 
     private Set<Channel> waitPong;
 
     public PingPongService(ChannelList channelList, Duration interval, Duration timeout) {
         this.channelList = channelList;
         this.timeout = timeout;
+        this.interval = interval;
         this.waitPong = ConcurrentHashMap.newKeySet();
 
         this.scheduledServicePingPongExecute = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    public void start() {
         this.scheduledServicePingPongExecute.scheduleWithFixedDelay(() -> execute(), 1, interval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
