@@ -142,6 +142,7 @@ public class Channels implements AutoCloseable {
     }
 
     public void start() {
+        pingPongService.start();
         if (grpcServer != null) {
             grpcServer.start();
         }
