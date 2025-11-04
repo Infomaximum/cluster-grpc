@@ -11,10 +11,14 @@ import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import com.infomaximum.cluster.test.utils.FinderFreeHostPort;
 import com.infomaximum.cluster.test.utils.ReaderResources;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.ExecutorUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
 public class Clusters implements AutoCloseable {
+
+    private final static Logger log = LoggerFactory.getLogger(Clusters.class);
 
     private Cluster cluster1;
     private Cluster cluster2;
@@ -116,7 +120,7 @@ public class Clusters implements AutoCloseable {
                     new Thread.UncaughtExceptionHandler() {
                         @Override
                         public void uncaughtException(Thread t, Throwable e) {
-                            e.printStackTrace();
+                            log.error("UncaughtException! ", e);
                         }
                     }
             );
