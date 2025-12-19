@@ -8,6 +8,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshakeNode;
+import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageStartComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageUpdateNode;
 import com.infomaximum.cluster.struct.Version;
 import org.slf4j.Logger;
@@ -42,6 +43,10 @@ public class ConvertProto {
             components.add(convert(nodeRuntimeId, netComponent));
         }
         return components;
+    }
+
+    public static LocationRuntimeComponent convert(UUID nodeRuntimeId, PNetPackageStartComponent packageStartComponent) {
+        return convert(nodeRuntimeId, packageStartComponent.getPNetPackageComponent());
     }
 
     private static LocationRuntimeComponent convert(UUID nodeRuntimeId, PNetPackageComponent netComponent) {

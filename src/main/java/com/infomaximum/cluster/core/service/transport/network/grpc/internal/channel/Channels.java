@@ -7,6 +7,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNod
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.client.Clients;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.server.GrpcServer;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.service.ComponentService;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel.service.PingPongService;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
@@ -39,6 +40,8 @@ public class Channels implements AutoCloseable {
 
     private final PingPongService pingPongService;
 
+    private final ComponentService componentService;
+
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
     private Channels(Builder builder) {
@@ -55,6 +58,7 @@ public class Channels implements AutoCloseable {
             this.grpcServer = null;
         }
         this.pingPongService = new PingPongService(channelList, builder.pingPongInterval, builder.pingPongTimeout);
+        this.componentService = new ComponentService(transportManager);
     }
 
 
@@ -127,10 +131,12 @@ public class Channels implements AutoCloseable {
 
     public void registerChannel(Channel channel) {
         channelList.addChannel(channel);
+        componentService.registerComponents(channel);
     }
 
     public void unRegisterChannel(Channel channel, CauseNodeDisconnect cause) {
         channelList.removeChannel(channel, cause);
+        componentService.unRegisterComponents(channel);
     }
 
     public List<Node> getRemoteNodes() {
@@ -151,6 +157,10 @@ public class Channels implements AutoCloseable {
 
     public PingPongService getPingPongService() {
         return pingPongService;
+    }
+
+    public ComponentService getComponentService() {
+        return componentService;
     }
 
     public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {

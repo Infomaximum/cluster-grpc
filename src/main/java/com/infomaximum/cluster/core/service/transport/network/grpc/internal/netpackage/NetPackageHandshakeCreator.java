@@ -62,4 +62,11 @@ public class NetPackageHandshakeCreator {
         }
         return builder.build();
     }
+
+    public static PNetPackage buildPackageStartComponent(RuntimeComponentInfo runtimeComponentInfo) {
+        PNetPackageComponent pNetPackageComponent = buildPackageComponent(runtimeComponentInfo);
+        PNetPackageStartComponent.Builder builder = PNetPackageStartComponent.newBuilder()
+                .setPNetPackageComponent(pNetPackageComponent);
+        return PNetPackage.newBuilder().setStartComponent(builder).build();
+    }
 }

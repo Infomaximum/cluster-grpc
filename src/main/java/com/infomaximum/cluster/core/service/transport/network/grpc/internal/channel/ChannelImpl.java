@@ -1,16 +1,12 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.channel;
 
-import com.infomaximum.cluster.core.service.transport.network.LocationRuntimeComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.struct.RNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
-import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.convert.ConvertProto;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
-import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageUpdateNode;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.UUID;
 
 public abstract class ChannelImpl implements Channel {
@@ -44,11 +40,6 @@ public abstract class ChannelImpl implements Channel {
     @Override
     public boolean isAvailable() {
         return available;
-    }
-
-    public void handleIncomingPacket(PNetPackageUpdateNode value){
-        List<LocationRuntimeComponent> components = ConvertProto.convert(remoteNode.node.getRuntimeId(), value);
-        remoteNode.setComponents(components);
     }
 
     public void send(PNetPackage value){

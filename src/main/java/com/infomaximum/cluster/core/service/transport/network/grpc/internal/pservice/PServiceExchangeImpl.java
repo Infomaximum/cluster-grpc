@@ -136,12 +136,14 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         }  else if (requestPackage.hasBody()) {
             remoteControllerRequest.handleIncomingPacket(requestPackage.getBody());
         } else if (requestPackage.hasUpdateNode()) {
-            channel.handleIncomingPacket(requestPackage.getUpdateNode());
+            channels.getComponentService().handleIncomingPacket(channel, requestPackage.getUpdateNode());
         } else if (requestPackage.hasPing()) {
             channels.getPingPongService().handleIncomingPing(channel, requestPackage.getPing());
         } else if (requestPackage.hasPong()) {
             channels.getPingPongService().handleIncomingPong(channel, requestPackage.getPong());
-        } else {
+        } else if (requestPackage.hasStartComponent()) {
+            channels.getComponentService().handleIncomingPacket(channel, requestPackage.getStartComponent());
+        }  else {
             log.error("Unknown state, channel: {}, packet: {}. Disconnect", channel, requestPackage.toString());
             //TODO надо переподнимать соединение, а не падать
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
