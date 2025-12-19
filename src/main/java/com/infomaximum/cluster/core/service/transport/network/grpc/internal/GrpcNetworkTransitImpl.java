@@ -72,7 +72,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
                 .build();
 
         this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this, channels);
-        new NotificationUpdateComponent(node, managerRuntimeComponent.getLocalManagerRuntimeComponent(), channels);
+        new NotificationUpdateComponent(managerRuntimeComponent.getLocalManagerRuntimeComponent(), channels);
     }
 
     @Override

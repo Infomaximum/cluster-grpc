@@ -7,6 +7,7 @@ import com.infomaximum.cluster.component.memory.MemoryComponent;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcNetworkTransit;
 import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.event.UpdateNodeConnect;
+import com.infomaximum.cluster.struct.Component;
 import com.infomaximum.cluster.test.component.custom1.Custom1Component;
 import com.infomaximum.cluster.test.utils.FinderFreeHostPort;
 import com.infomaximum.cluster.test.utils.ReaderResources;
@@ -32,6 +33,9 @@ public class Clusters implements AutoCloseable {
                 clusterBuilder1.withListenerUpdateConnect(updateNodeConnect1);
             }
             cluster1 = clusterBuilder1.build();
+            cluster1.start();
+            cluster1.getLocalComponents()
+                    .forEach(Component::start);
         });
 
         ExecutorUtil.executors.execute(() -> {
@@ -42,6 +46,9 @@ public class Clusters implements AutoCloseable {
                 clusterBuilder2.withListenerUpdateConnect(updateNodeConnect2);
             }
             cluster2 = clusterBuilder2.build();
+            cluster2.start();
+            cluster2.getLocalComponents()
+                    .forEach(Component::start);
         });
 
         //Ожидаем старта

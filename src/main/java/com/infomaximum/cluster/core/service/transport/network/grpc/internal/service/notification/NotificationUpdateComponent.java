@@ -14,29 +14,25 @@ public class NotificationUpdateComponent implements EventUpdateLocalComponent {
 
     private final static Logger log = LoggerFactory.getLogger(NotificationUpdateComponent.class);
 
-    private final GrpcNode node;
-    private final LocalManagerRuntimeComponent localManagerRuntimeComponent;
     private final Channels channels;
 
-    public NotificationUpdateComponent(GrpcNode node, LocalManagerRuntimeComponent localManagerRuntimeComponent, Channels channels) {
-        this.node = node;
-        this.localManagerRuntimeComponent = localManagerRuntimeComponent;
+    public NotificationUpdateComponent(LocalManagerRuntimeComponent localManagerRuntimeComponent, Channels channels) {
         this.channels = channels;
         localManagerRuntimeComponent.addListener(this);
     }
 
     @Override
     public void registerComponent(RuntimeComponentInfo subSystemInfo) {
-        sentNotification();
+        sentNotification(subSystemInfo);
     }
 
     @Override
     public void unRegisterComponent(RuntimeComponentInfo subSystemInfo) {
-        sentNotification();
+        //TODO: реализовать когда будет PNetPackageStopComponent
     }
 
-    private void sentNotification() {
-        PNetPackage netPackage = NetPackageHandshakeCreator.buildPacketUpdateNode(localManagerRuntimeComponent);
+    private void sentNotification(RuntimeComponentInfo subSystemInfo) {
+        PNetPackage netPackage = NetPackageHandshakeCreator.buildPackageStartComponent(subSystemInfo);
         channels.sendBroadcast(netPackage);
     }
 }

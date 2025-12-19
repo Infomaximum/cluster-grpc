@@ -14,6 +14,7 @@ message PNetPackage  {
     PNetPackageBody body = 7;
     PNetPackagePing ping = 8;
     PNetPackagePong pong = 9;
+    PNetPackageStartComponent startComponent = 10;
   }
 }
 
@@ -32,6 +33,10 @@ message PNetPackageHandshakeNode  {
   sfixed64 runtimeIdMostSigBits = 2;//node runtime uuid
   sfixed64 runtimeIdLeastSigBits = 3;//node runtime uuid
   repeated PNetPackageComponent pNetPackageComponents = 4;
+}
+
+message PNetPackageStartComponent  {
+  PNetPackageComponent pNetPackageComponent = 1;
 }
 
 message PNetPackageComponent  {

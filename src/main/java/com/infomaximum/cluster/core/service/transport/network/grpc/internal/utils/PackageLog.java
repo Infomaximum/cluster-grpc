@@ -25,7 +25,9 @@ public class PackageLog {
             return toString(value.getHandshakeResponse());
         } else if (value.hasBody()) {
             return toString(value.getBody());
-        }  else {
+        } else if (value.hasStartComponent()) {
+            return toString(value.getStartComponent());
+        }   else {
             throw new RuntimeException("Unknown package: " + value);
         }
     }
@@ -58,6 +60,12 @@ public class PackageLog {
 
     public static String toString(PNetPackageHandshakeResponse value) {
         return "PackageHandshakeResponse{}";
+    }
+
+    public static String toString(PNetPackageStartComponent value) {
+        return "PackageStartComponent{" +
+                "uuid=" + value.getPNetPackageComponent().getUuid() +
+                '}';
     }
 
     public static String toString(PNetPackagePing value) {
