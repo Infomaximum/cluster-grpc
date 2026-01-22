@@ -10,10 +10,12 @@ public class GrpcNode implements Node {
 
     private final String name;
     private final UUID runtimeId;
+    private final boolean isLocal;
 
-    private GrpcNode(String name, UUID runtimeId) {
+    private GrpcNode(String name, UUID runtimeId, boolean isLocal) {
         this.name = name;
         this.runtimeId = runtimeId;
+        this.isLocal = isLocal;
     }
 
     @Override
@@ -27,10 +29,16 @@ public class GrpcNode implements Node {
     }
 
     @Override
+    public boolean isLocal() {
+        return isLocal;
+    }
+
+    @Override
     public String toString() {
         return "GrpcNode{" +
                 "name='" + name + '\'' +
                 ", runtimeId=" + runtimeId +
+                ", isLocal=" + isLocal +
                 '}';
     }
 
@@ -38,8 +46,9 @@ public class GrpcNode implements Node {
 
         private String name;
         private UUID runtimeId;
+        private final boolean isLocal;
 
-        public Builder(GrpcNetworkTransit.Builder.Server server) {
+        public Builder(GrpcNetworkTransit.Builder.Server server, boolean isLocal) {
             try {
                 this.name = InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException e) {
@@ -50,11 +59,13 @@ public class GrpcNode implements Node {
             }
 
             this.runtimeId = UUID.randomUUID();
+            this.isLocal = isLocal;
         }
 
-        public Builder(String name, UUID runtimeId) {
+        public Builder(String name, UUID runtimeId, boolean isLocal) {
             this.name = name;
             this.runtimeId = runtimeId;
+            this.isLocal = isLocal;
         }
 
         public Builder withName(String name){
@@ -63,7 +74,7 @@ public class GrpcNode implements Node {
         }
 
         public GrpcNode build(){
-            return new GrpcNode(name, runtimeId);
+            return new GrpcNode(name, runtimeId, isLocal);
         }
     }
 }

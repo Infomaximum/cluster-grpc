@@ -131,12 +131,10 @@ public class Channels implements AutoCloseable {
 
     public void registerChannel(Channel channel) {
         channelList.addChannel(channel);
-        componentService.registerComponents(channel);
     }
 
     public void unRegisterChannel(Channel channel, CauseNodeDisconnect cause) {
         channelList.removeChannel(channel, cause);
-        componentService.unRegisterComponents(channel);
     }
 
     public List<Node> getRemoteNodes() {

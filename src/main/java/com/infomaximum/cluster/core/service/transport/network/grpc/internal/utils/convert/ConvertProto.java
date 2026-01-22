@@ -26,7 +26,7 @@ public class ConvertProto {
     public static RNode convert(PNetPackageHandshakeNode handshakeNode) {
         UUID nodeRuntimeId = new UUID(handshakeNode.getRuntimeIdMostSigBits(), handshakeNode.getRuntimeIdLeastSigBits());
 
-        Node node = new GrpcNode.Builder(handshakeNode.getName(), nodeRuntimeId).build();
+        Node node = new GrpcNode.Builder(handshakeNode.getName(), nodeRuntimeId, false).build();
 
         List<LocationRuntimeComponent> components = new ArrayList<>();
         for (int i = 0; i < handshakeNode.getPNetPackageComponentsCount(); i++) {

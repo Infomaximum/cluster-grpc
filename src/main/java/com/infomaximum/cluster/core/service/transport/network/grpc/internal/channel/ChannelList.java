@@ -49,6 +49,7 @@ public class ChannelList {
         //Отправляем оповещение
         if (fireEvent) {
             channels.fireEventConnectNode(remoteNode);
+            channels.getComponentService().registerComponents(channel);
         }
     }
 
@@ -75,6 +76,7 @@ public class ChannelList {
         //Отправляем оповещение
         if (fireEvent) {
             channels.fireEventDisconnectNode(remoteNode, cause);
+            channels.getComponentService().unRegisterComponents(channel);
         }
     }
 
