@@ -52,7 +52,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         this.remotePackerObject = transportManager.getRemotePackerObject();
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
 
-        GrpcNode.Builder nodeBuilder = new GrpcNode.Builder(builder.getServer());
+        GrpcNode.Builder nodeBuilder = new GrpcNode.Builder(builder.getServer(), true);
         if (builder.getNodeName() != null) {
             nodeBuilder.withName(builder.getNodeName());
         }
