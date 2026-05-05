@@ -150,7 +150,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
         //Механизм проверки, что это не дублирующий пакет
         synchronized (waitLocalExecuteRequest) {
-            if (waitLocalExecuteRequest.contains(waitLocalExecute)) {
+            if (waitLocalExecuteRequest.containsKey(waitLocalExecute)) {
                 log.debug("Duplicate packet, ignore: {}", PackageLog.toString(request));
                 return;
             }
@@ -266,7 +266,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     }
 
     private void sendWaitResponsePackets() {
-        long cleaningTime = System.currentTimeMillis() + TIME_CLEAR_REQUEST_EXECUTE;
+        long cleaningTime = System.currentTimeMillis() - TIME_CLEAR_REQUEST_EXECUTE;
         for (Map.Entry<WaitLocalExecute, WaitLocalExecuteResult> entry : waitLocalExecuteRequest.entrySet()) {
             WaitLocalExecute waitLocalExecute = entry.getKey();
             WaitLocalExecuteResult waitLocalExecuteResult = entry.getValue();
