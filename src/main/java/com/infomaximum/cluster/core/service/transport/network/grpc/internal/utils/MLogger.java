@@ -30,6 +30,12 @@ public class MLogger {
         }
     }
 
+    public void warn(String format, Object... args) {
+        if (write()) {
+            log.warn(format, args);
+        }
+    }
+
     private boolean write() {
         int count = counter.incrementAndGet();
         if (count == 0 || count > size) {//count==0 в случае первого запуска

@@ -34,7 +34,8 @@ public class NetPackageHandshakeCreator {
         PNetPackageHandshakeNode.Builder nodeBuilder = PNetPackageHandshakeNode.newBuilder()
                 .setName(grpcNetworkTransit.getNode().getName())
                 .setRuntimeIdMostSigBits(nodeRuntimeId.getMostSignificantBits())
-                .setRuntimeIdLeastSigBits(nodeRuntimeId.getLeastSignificantBits());
+                .setRuntimeIdLeastSigBits(nodeRuntimeId.getLeastSignificantBits())
+                .setProtocolVersion(grpcNetworkTransit.getProtocolVersion());
 
         LocalManagerRuntimeComponent localManagerRuntimeComponent = grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent();
         for (RuntimeComponentInfo runtimeComponentInfo : localManagerRuntimeComponent.getComponents()) {

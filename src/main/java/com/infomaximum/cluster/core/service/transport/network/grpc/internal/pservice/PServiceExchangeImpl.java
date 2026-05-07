@@ -9,23 +9,31 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.internal.chan
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.engine.GrpcPoolExecutor;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage.NetPackageHandshakeCreator;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.service.remotecontroller.GrpcRemoteControllerRequest;
+import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.MLogger;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.PackageLog;
 import com.infomaximum.cluster.core.service.transport.network.grpc.pservice.PServiceExchangeGrpc;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackage;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.PNetPackageHandshakeRequest;
 import com.infomaximum.cluster.event.CauseNodeDisconnect;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
 
 public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeImplBase {
 
     private final static Logger log = LoggerFactory.getLogger(PServiceExchangeImpl.class);
 
+    private static final int REJECT_LOG_THROTTLE = 60;
+
     private final GrpcRemoteControllerRequest remoteControllerRequest;
     private final TransportManager transportManager;
     private final Channels channels;
     private final GrpcPoolExecutor grpcPoolExecutor;
+
+    private final MLogger rejectLog = new MLogger(log, REJECT_LOG_THROTTLE);
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -103,7 +111,25 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         //Сообщаем о себе и регистрируем канал
         PNetPackageHandshakeRequest handshakeRequest = requestPackage.getHandshakeRequest();
 
-        PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse((GrpcNetworkTransitImpl) transportManager.networkTransit);
+        GrpcNetworkTransitImpl networkTransit = (GrpcNetworkTransitImpl) transportManager.networkTransit;
+        int localProtocolVersion = networkTransit.getProtocolVersion();
+        int remoteProtocolVersion = handshakeRequest.getNode().getProtocolVersion();
+        if (localProtocolVersion != remoteProtocolVersion) {
+            UUID remoteRuntimeId = new UUID(
+                    handshakeRequest.getNode().getRuntimeIdMostSigBits(),
+                    handshakeRequest.getNode().getRuntimeIdLeastSigBits()
+            );
+            rejectLog.warn(
+                    "Rejected handshake from {} ({}): protocol version mismatch (local={}, remote={})",
+                    handshakeRequest.getNode().getName(), remoteRuntimeId, localProtocolVersion, remoteProtocolVersion
+            );
+            responseObserver.onError(Status.FAILED_PRECONDITION
+                    .withDescription("cluster-grpc protocol version mismatch: local=" + localProtocolVersion + ", remote=" + remoteProtocolVersion)
+                    .asRuntimeException());
+            return null;
+        }
+
+        PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse(networkTransit);
         responseObserver.onNext(handshakeResponse);
 
         ChannelServer channelServer = new ChannelServer.Builder(responseObserver, handshakeRequest).build();

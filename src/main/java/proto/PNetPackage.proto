@@ -33,6 +33,7 @@ message PNetPackageHandshakeNode  {
   sfixed64 runtimeIdMostSigBits = 2;//node runtime uuid
   sfixed64 runtimeIdLeastSigBits = 3;//node runtime uuid
   repeated PNetPackageComponent pNetPackageComponents = 4;
+  int32 protocolVersion = 5;//cluster-grpc transport protocol version
 }
 
 message PNetPackageStartComponent  {

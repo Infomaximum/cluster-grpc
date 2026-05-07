@@ -16,6 +16,7 @@ import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.event.CauseNodeDisconnect;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.utils.ExecutorUtil;
 import io.grpc.ManagedChannel;
+import io.grpc.Status;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
@@ -42,6 +43,7 @@ public class Client implements AutoCloseable {
     private final PServiceExchangeGrpc.PServiceExchangeStub exchangeStub;
     private final StreamObserver<PNetPackage> responseObserver;
     private final MLogger mLog;
+    private final MLogger rejectLog;
 
     private final GrpcPoolExecutor grpcPoolExecutor;
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
@@ -82,6 +84,7 @@ public class Client implements AutoCloseable {
         }
 
         this.mLog = new MLogger(log, 60 * 1000 / TIMEOUT_REPEAT_CONNECT);//Раз в 1 минуту
+        this.rejectLog = new MLogger(log, 60 * 1000 / TIMEOUT_REPEAT_CONNECT);//Раз в 1 минуту
 
         exchangeStub = PServiceExchangeGrpc.newStub(channel);
         responseObserver =
@@ -186,6 +189,23 @@ public class Client implements AutoCloseable {
             log.error("Unknown state, channel: null, packet: {}. Disconnect", requestPackage.toString());
             //TODO надо переподнимать соединение, а не падать
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
+            return null;
+        }
+
+        int localProtocolVersion = grpcNetworkTransit.getProtocolVersion();
+        int remoteProtocolVersion = requestPackage.getHandshakeResponse().getNode().getProtocolVersion();
+        if (localProtocolVersion != remoteProtocolVersion) {
+            UUID remoteRuntimeId = new UUID(
+                    requestPackage.getHandshakeResponse().getNode().getRuntimeIdMostSigBits(),
+                    requestPackage.getHandshakeResponse().getNode().getRuntimeIdLeastSigBits()
+            );
+            rejectLog.warn(
+                    "Rejected handshake to {} ({}): protocol version mismatch (local={}, remote={})",
+                    requestPackage.getHandshakeResponse().getNode().getName(), remoteRuntimeId, localProtocolVersion, remoteProtocolVersion
+            );
+            channelRequestObserver.onError(Status.FAILED_PRECONDITION
+                    .withDescription("cluster-grpc protocol version mismatch: local=" + localProtocolVersion + ", remote=" + remoteProtocolVersion)
+                    .asRuntimeException());
             return null;
         }
 

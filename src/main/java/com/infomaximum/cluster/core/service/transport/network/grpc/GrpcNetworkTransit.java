@@ -31,6 +31,8 @@ public interface GrpcNetworkTransit {
         private Duration pingPongInterval;
         private Duration pingPongTimeout;
 
+        private int protocolVersion;
+
         private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
         private byte[] fileCertChain;
         private byte[] filePrivateKey;
@@ -41,6 +43,7 @@ public interface GrpcNetworkTransit {
             this.timeoutConfirmationWaitResponse = DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE;
             this.pingPongInterval = DEFAULT_PING_PONG_INTERVAL;
             this.pingPongTimeout = DEFAULT_PING_PONG_TIMEOUT;
+            this.protocolVersion = GrpcProtocolVersion.CURRENT;
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         }
 
@@ -83,6 +86,19 @@ public interface GrpcNetworkTransit {
             return this;
         }
 
+        /**
+         * Переопределяет значение версии транспортного протокола, отправляемое в handshake.
+         * По умолчанию используется {@link GrpcProtocolVersion#CURRENT}; явное переопределение
+         * требуется только для эмуляции рассинхрона версий в тестах.
+         *
+         * @param protocolVersion значение, которое нода будет отправлять удалённой стороне
+         * @return этот builder для chaining
+         */
+        public Builder withProtocolVersion(int protocolVersion) {
+            this.protocolVersion = protocolVersion;
+            return this;
+        }
+
         public String getNodeName() {
             return nodeName;
         }
@@ -105,6 +121,10 @@ public interface GrpcNetworkTransit {
 
         public Duration getPingPongTimeout() {
             return pingPongTimeout;
+        }
+
+        public int getProtocolVersion() {
+            return protocolVersion;
         }
 
         public GrpcNetworkTransitImpl build(TransportManager transportManager) {

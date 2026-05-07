@@ -42,7 +42,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     private final Duration timeoutConfirmationWaitResponse;
 
-
+    private final int protocolVersion;
 
     private final Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -60,6 +60,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
         this.targets = builder.getTargets();
         this.timeoutConfirmationWaitResponse = builder.getTimeoutConfirmationWaitResponse();
+        this.protocolVersion = builder.getProtocolVersion();
 
         this.grpcPoolExecutor = new GrpcPoolExecutor(uncaughtExceptionHandler);
 
@@ -101,6 +102,10 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     public Duration getTimeoutConfirmationWaitResponse() {
         return timeoutConfirmationWaitResponse;
+    }
+
+    public int getProtocolVersion() {
+        return protocolVersion;
     }
 
     @Override

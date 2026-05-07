@@ -117,6 +117,9 @@ public class Clusters implements AutoCloseable {
         private Duration pingPongInterval;
         private Duration pingPongTimeout;
 
+        private Integer protocolVersion1;
+        private Integer protocolVersion2;
+
         public Builder(int communicationModeId) {
             this(CommunicationMode.get(communicationModeId));
         }
@@ -228,6 +231,21 @@ public class Clusters implements AutoCloseable {
             return this;
         }
 
+        /**
+         * Переопределяет версию транспортного протокола для одного или обоих кластеров;
+         * {@code null} означает «использовать дефолт {@code GrpcProtocolVersion.CURRENT}».
+         * Используется для эмуляции рассинхрона версий между нодами в интеграционных тестах.
+         *
+         * @param protocolVersion1 версия для cluster1 или {@code null}
+         * @param protocolVersion2 версия для cluster2 или {@code null}
+         * @return этот builder для chaining
+         */
+        public Builder withProtocolVersion(Integer protocolVersion1, Integer protocolVersion2) {
+            this.protocolVersion1 = protocolVersion1;
+            this.protocolVersion2 = protocolVersion2;
+            return this;
+        }
+
         public Clusters build() {
             if (timeoutConfirmationWaitResponse1 != null) {
                 builderNetworkTransit1.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse1);
@@ -238,6 +256,12 @@ public class Clusters implements AutoCloseable {
             if (pingPongInterval != null || pingPongTimeout != null) {
                 builderNetworkTransit1.withPingPongTimeout(pingPongInterval, pingPongTimeout);
                 builderNetworkTransit2.withPingPongTimeout(pingPongInterval, pingPongTimeout);
+            }
+            if (protocolVersion1 != null) {
+                builderNetworkTransit1.withProtocolVersion(protocolVersion1);
+            }
+            if (protocolVersion2 != null) {
+                builderNetworkTransit2.withProtocolVersion(protocolVersion2);
             }
             return new Clusters(builderNetworkTransit1, updateNodeConnect1, builderNetworkTransit2, updateNodeConnect2, uncaughtExceptionHandler);
         }
