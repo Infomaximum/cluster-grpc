@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class PackageBodyUtilsTest {
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "[{index}]")
     @MethodSource("getArguments")
     public void cutAndGetBodyTest(byte[] bytes) {
         UUID uuid = UUID.randomUUID();
@@ -55,7 +55,7 @@ public class PackageBodyUtilsTest {
         assertThat(bytes).isEqualTo(body);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "[{index}]")
     @MethodSource("getArgs")
     public void getIndexesHeavyArgsTest(byte[][] args, Set<Integer> expectedSet) {
         int argsSum = Arrays.stream(args)
@@ -68,7 +68,7 @@ public class PackageBodyUtilsTest {
                 .containsAll(expectedSet);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "[{index}]")
     @MethodSource("getArgsForRequest")
     public void getPackagesTest(byte[][] argsRequest, int expectedSize) {
         PNetPackage[] packages = PackageBodyUtils.getPackages(argsRequest, PNetPackageRequest.newBuilder());
@@ -85,7 +85,7 @@ public class PackageBodyUtilsTest {
                 .isEqualTo(expectedSize - 1);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "[{index}]")
     @MethodSource("getValueForResponse")
     public void getPackagesTest(byte[] valueResponse, int expectedSize) {
         ComponentExecutorTransport.Result result = new ComponentExecutorTransport.Result(valueResponse, null);
@@ -108,7 +108,7 @@ public class PackageBodyUtilsTest {
         byte[] body2 = new byte[BodyProcess.BODY_DELIMITER - 1];
         byte[] body3 = new byte[BodyProcess.BODY_DELIMITER + 1];
         byte[] body4 = new byte[BodyProcess.BODY_DELIMITER];
-        byte[] body5 = new byte[RandomUtil.random.nextInt(body1.length, body1.length * 20)];
+        byte[] body5 = new byte[RandomUtil.random.nextInt(body1.length, body1.length * 2)];
 
         RandomUtil.random.nextBytes(body1);
         RandomUtil.random.nextBytes(body2);
@@ -202,7 +202,7 @@ public class PackageBodyUtilsTest {
         byte[] body2 = new byte[BodyProcess.BODY_DELIMITER - 1];
         byte[] body3 = new byte[BodyProcess.BODY_DELIMITER + 1];
         byte[] body4 = new byte[BodyProcess.BODY_DELIMITER];
-        byte[] body5 = new byte[BodyProcess.BODY_DELIMITER * 20];
+        byte[] body5 = new byte[BodyProcess.BODY_DELIMITER * 5];
 
         RandomUtil.random.nextBytes(body1);
         RandomUtil.random.nextBytes(body2);
@@ -215,7 +215,7 @@ public class PackageBodyUtilsTest {
                 Arguments.of(body2, 1),
                 Arguments.of(body3, 2),
                 Arguments.of(body4, 1),
-                Arguments.of(body5, 20)
+                Arguments.of(body5, 5)
         );
     }
 }

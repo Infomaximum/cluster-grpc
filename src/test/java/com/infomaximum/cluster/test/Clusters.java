@@ -110,12 +110,11 @@ public class Clusters implements AutoCloseable {
         private UpdateNodeConnect updateNodeConnect1;
         private UpdateNodeConnect updateNodeConnect2;
 
-        private Duration timeoutConfirmationWaitResponse1;
+        private Duration waitResponseTimeout1;
 
-        private Duration timeoutConfirmationWaitResponse2;
+        private Duration waitResponseTimeout2;
 
         private Duration pingPongInterval;
-        private Duration pingPongTimeout;
 
         private Integer protocolVersion1;
         private Integer protocolVersion2;
@@ -219,15 +218,14 @@ public class Clusters implements AutoCloseable {
             return this;
         }
 
-        public Builder withTimeoutConfirmationWaitResponse(Duration timeoutConfirmationWaitResponse1, Duration timeoutConfirmationWaitResponse2) {
-            this.timeoutConfirmationWaitResponse1 = timeoutConfirmationWaitResponse1;
-            this.timeoutConfirmationWaitResponse2 = timeoutConfirmationWaitResponse2;
+        public Builder withWaitResponseTimeout(Duration waitResponseTimeout1, Duration waitResponseTimeout2) {
+            this.waitResponseTimeout1 = waitResponseTimeout1;
+            this.waitResponseTimeout2 = waitResponseTimeout2;
             return this;
         }
 
-        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+        public Builder withPingPongInterval(Duration interval) {
             this.pingPongInterval = interval;
-            this.pingPongTimeout = timeout;
             return this;
         }
 
@@ -247,15 +245,15 @@ public class Clusters implements AutoCloseable {
         }
 
         public Clusters build() {
-            if (timeoutConfirmationWaitResponse1 != null) {
-                builderNetworkTransit1.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse1);
+            if (waitResponseTimeout1 != null) {
+                builderNetworkTransit1.withWaitResponseTimeout(waitResponseTimeout1);
             }
-            if (timeoutConfirmationWaitResponse2 != null) {
-                builderNetworkTransit2.withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse2);
+            if (waitResponseTimeout2 != null) {
+                builderNetworkTransit2.withWaitResponseTimeout(waitResponseTimeout2);
             }
-            if (pingPongInterval != null || pingPongTimeout != null) {
-                builderNetworkTransit1.withPingPongTimeout(pingPongInterval, pingPongTimeout);
-                builderNetworkTransit2.withPingPongTimeout(pingPongInterval, pingPongTimeout);
+            if (pingPongInterval != null) {
+                builderNetworkTransit1.withPingPongInterval(pingPongInterval);
+                builderNetworkTransit2.withPingPongInterval(pingPongInterval);
             }
             if (protocolVersion1 != null) {
                 builderNetworkTransit1.withProtocolVersion(protocolVersion1);

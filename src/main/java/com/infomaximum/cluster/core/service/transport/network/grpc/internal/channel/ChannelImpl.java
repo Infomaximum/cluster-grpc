@@ -14,15 +14,22 @@ public abstract class ChannelImpl implements Channel {
     private final static Logger log = LoggerFactory.getLogger(ChannelImpl.class);
 
     public final RNode remoteNode;
+
+    /**
+     * Согласованный через handshake тайм-аут ожидания ответа для этого канала, в миллисекундах.
+     */
+    private final long channelTimeoutMillis;
+
     protected final StreamObserver<PNetPackage> requestObserver;
 
     private volatile boolean available;
 
     private final UUID uuid;
 
-    protected ChannelImpl(UUID uuid, RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
+    protected ChannelImpl(UUID uuid, RNode remoteNode, long channelTimeoutMillis, StreamObserver<PNetPackage> requestObserver) {
         this.uuid = uuid;
         this.remoteNode = remoteNode;
+        this.channelTimeoutMillis = channelTimeoutMillis;
         this.requestObserver = requestObserver;
         this.available = true;
     }
@@ -42,6 +49,12 @@ public abstract class ChannelImpl implements Channel {
         return available;
     }
 
+    @Override
+    public long getChannelTimeoutMillis() {
+        return channelTimeoutMillis;
+    }
+
+    @Override
     public void send(PNetPackage value){
         if (log.isTraceEnabled()) {
             log.trace("Send packet: {} to channel: {}", PackageLog.toString(value), this);

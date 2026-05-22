@@ -132,7 +132,12 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         PNetPackage handshakeResponse = NetPackageHandshakeCreator.createResponse(networkTransit);
         responseObserver.onNext(handshakeResponse);
 
-        ChannelServer channelServer = new ChannelServer.Builder(responseObserver, handshakeRequest).build();
+        long channelTimeoutMillis = handshakeRequest.getNode().getWaitResponseTimeoutMillis();
+        if (channelTimeoutMillis <= 0) {
+            // legacy клиент без поля timeout в handshake — fallback на глобальный default
+            channelTimeoutMillis = networkTransit.getWaitResponseTimeout().toMillis();
+        }
+        ChannelServer channelServer = new ChannelServer.Builder(responseObserver, handshakeRequest, channelTimeoutMillis).build();
 
         Node currentNode = transportManager.cluster.node;
         Node channelRemoteNode = channelServer.remoteNode.node;

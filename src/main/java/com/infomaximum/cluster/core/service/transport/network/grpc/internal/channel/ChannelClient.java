@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public class ChannelClient extends ChannelImpl {
 
-    ChannelClient(UUID uuid, RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
-        super(uuid, remoteNode, requestObserver);
+    ChannelClient(UUID uuid, RNode remoteNode, long channelTimeoutMillis, StreamObserver<PNetPackage> requestObserver) {
+        super(uuid, remoteNode, channelTimeoutMillis, requestObserver);
     }
 
     @Override
@@ -41,16 +41,18 @@ public class ChannelClient extends ChannelImpl {
         private final UUID uuid;
         private final StreamObserver<PNetPackage> requestObserver;
         private final PNetPackageHandshakeResponse handshakeResponse;
+        private final long channelTimeoutMillis;
 
-        public Builder(UUID uuid, StreamObserver<PNetPackage> requestObserver, PNetPackageHandshakeResponse handshakeResponse) {
+        public Builder(UUID uuid, StreamObserver<PNetPackage> requestObserver, PNetPackageHandshakeResponse handshakeResponse, long channelTimeoutMillis) {
             this.uuid = uuid;
             this.requestObserver = requestObserver;
             this.handshakeResponse = handshakeResponse;
+            this.channelTimeoutMillis = channelTimeoutMillis;
         }
 
         public ChannelClient build(){
             RNode remoteNode = ConvertProto.convert(handshakeResponse.getNode());
-            return new ChannelClient(uuid, remoteNode, requestObserver);
+            return new ChannelClient(uuid, remoteNode, channelTimeoutMillis, requestObserver);
         }
     }
 }

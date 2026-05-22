@@ -24,12 +24,12 @@ public class LongRequestTest {
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
     public void test(int modeId) throws Exception {
-        Duration timeoutConfirmationWaitResponse = Duration.ofSeconds(5);
-        try (Clusters clusters = new Clusters.Builder(modeId).withTimeoutConfirmationWaitResponse(timeoutConfirmationWaitResponse, timeoutConfirmationWaitResponse).build()) {
+        Duration waitResponseTimeout = Duration.ofSeconds(5);
+        try (Clusters clusters = new Clusters.Builder(modeId).withWaitResponseTimeout(waitResponseTimeout, waitResponseTimeout).build()) {
             MemoryComponent memoryComponent = clusters.getCluster1().getAnyLocalComponent(MemoryComponent.class);
             RControllerCustom1 rControllerCustom1 = memoryComponent.getRemotes().get(Custom1Component.class, RControllerCustom1.class);
 
-            String result = rControllerCustom1.slowRequest(timeoutConfirmationWaitResponse.toMillis() * 2L);
+            String result = rControllerCustom1.slowRequest(waitResponseTimeout.toMillis() * 2L);
 
             Assertions.assertEquals("OK", result);
         }

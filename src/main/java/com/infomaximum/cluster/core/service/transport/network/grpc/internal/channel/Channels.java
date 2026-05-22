@@ -57,7 +57,7 @@ public class Channels implements AutoCloseable {
         } else {
             this.grpcServer = null;
         }
-        this.pingPongService = new PingPongService(channelList, builder.pingPongInterval, builder.pingPongTimeout);
+        this.pingPongService = new PingPongService(channelList, builder.pingPongInterval);
         this.componentService = new ComponentService(transportManager);
     }
 
@@ -71,13 +71,23 @@ public class Channels implements AutoCloseable {
     }
 
     public void sendPacketWithRepeat(UUID targetNodeRuntimeId, PNetPackage netPackage) throws Exception {
-        sendPacket(targetNodeRuntimeId, netPackage, DEFAULT_ATTEMPT);
+        sendPacket(null, targetNodeRuntimeId, netPackage, DEFAULT_ATTEMPT);
+    }
+
+    public void sendPacketWithRepeat(Channel initialChannel, PNetPackage netPackage) throws Exception {
+        sendPacket(initialChannel, initialChannel.getRemoteNode().node.getRuntimeId(), netPackage, DEFAULT_ATTEMPT);
     }
 
     public void sendPacket(UUID targetNodeRuntimeId, PNetPackage netPackage, int attempt) throws Exception {
-        ChannelImpl channel;
+        sendPacket(null, targetNodeRuntimeId, netPackage, attempt);
+    }
+
+    private void sendPacket(Channel initialChannel, UUID targetNodeRuntimeId, PNetPackage netPackage, int attempt) throws Exception {
+        Channel channel = initialChannel;
         while (true) {
-            channel = (ChannelImpl) getChannel(targetNodeRuntimeId, attempt);
+            if (channel == null) {
+                channel = getChannel(targetNodeRuntimeId, attempt);
+            }
             if (channel == null) {
                 throw transportManager.getExceptionBuilder().buildRemoteComponentUnavailableException(targetNodeRuntimeId, null);
             }
@@ -88,6 +98,7 @@ public class Channels implements AutoCloseable {
             } catch (Exception e) {
                 //Пробуем найти другой канал
                 log.debug("Error send packed: {}, to node: {}, find another chanel", PackageLog.toString(netPackage), targetNodeRuntimeId, e);
+                channel = null;
             }
         }
     }
@@ -186,7 +197,6 @@ public class Channels implements AutoCloseable {
         private List<GrpcRemoteNode> targets;
 
         private Duration pingPongInterval;
-        private Duration pingPongTimeout;
 
         public Builder(GrpcNetworkTransitImpl grpcNetworkTransit) {
             this.grpcNetworkTransit = grpcNetworkTransit;
@@ -209,9 +219,8 @@ public class Channels implements AutoCloseable {
             return this;
         }
 
-        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+        public Builder withPingPongInterval(Duration interval) {
             this.pingPongInterval = interval;
-            this.pingPongTimeout = timeout;
             return this;
         }
 

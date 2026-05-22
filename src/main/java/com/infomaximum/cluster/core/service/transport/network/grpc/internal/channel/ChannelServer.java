@@ -16,8 +16,8 @@ public class ChannelServer extends ChannelImpl {
 
     private final static Logger log = LoggerFactory.getLogger(ChannelServer.class);
 
-    ChannelServer(UUID uuid, RNode remoteNode, StreamObserver<PNetPackage> requestObserver) {
-        super(uuid, remoteNode, requestObserver);
+    ChannelServer(UUID uuid, RNode remoteNode, long channelTimeoutMillis, StreamObserver<PNetPackage> requestObserver) {
+        super(uuid, remoteNode, channelTimeoutMillis, requestObserver);
     }
 
     @Override
@@ -50,16 +50,18 @@ public class ChannelServer extends ChannelImpl {
 
         private final StreamObserver<PNetPackage> requestObserver;
         private final PNetPackageHandshakeRequest handshakeRequest;
+        private final long channelTimeoutMillis;
 
-        public Builder(StreamObserver<PNetPackage> requestObserver, PNetPackageHandshakeRequest handshakeRequest) {
+        public Builder(StreamObserver<PNetPackage> requestObserver, PNetPackageHandshakeRequest handshakeRequest, long channelTimeoutMillis) {
             this.requestObserver = requestObserver;
             this.handshakeRequest = handshakeRequest;
+            this.channelTimeoutMillis = channelTimeoutMillis;
         }
 
         public ChannelServer build(){
             UUID uuidChannel = new UUID(handshakeRequest.getChannelIdMostSigBits(), handshakeRequest.getChannelIdLeastSigBit());
             RNode remoteNode = ConvertProto.convert(handshakeRequest.getNode());
-            return new ChannelServer(uuidChannel, remoteNode, requestObserver);
+            return new ChannelServer(uuidChannel, remoteNode, channelTimeoutMillis, requestObserver);
         }
     }
 }

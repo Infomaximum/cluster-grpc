@@ -28,8 +28,9 @@ public class PingPongTest {
         ListenerUpdateConnect listenerUpdateConnect1 = new ListenerUpdateConnect();
         ListenerUpdateConnect listenerUpdateConnect2 = new ListenerUpdateConnect();
         try (Clusters clusters = new Clusters.Builder(modeId)
-                .withPingPongTimeout(Duration.ofSeconds(1), Duration.ofSeconds(1))
+                .withPingPongInterval(Duration.ofMillis(200))
                 .withListenerUpdateConnect(listenerUpdateConnect1, listenerUpdateConnect2)
+                .withWaitResponseTimeout(Duration.ofSeconds(3), Duration.ofSeconds(3))
                 .build()) {
 
             GrpcNetworkTransitImpl networkTransit1 = (GrpcNetworkTransitImpl) clusters.getCluster1().getTransportManager().networkTransit;
@@ -59,10 +60,10 @@ public class PingPongTest {
         private final CompletableFuture<Boolean> pingPongTimeoutExceptionFuture;
 
         public ListenerUpdateConnect() {
-            pingPongTimeoutExceptionFuture = new CompletableFuture<Boolean>();
+            pingPongTimeoutExceptionFuture = new CompletableFuture<>();
         }
 
-        public CompletableFuture getPingPongTimeoutExceptionFuture() {
+        public CompletableFuture<Boolean> getPingPongTimeoutExceptionFuture() {
             return pingPongTimeoutExceptionFuture;
         }
 
@@ -75,6 +76,7 @@ public class PingPongTest {
             if (cause.type == CauseNodeDisconnect.Type.TIMEOUT && cause.throwable!=null && cause.throwable.getClass() == ClusterGrpcPingPongTimeoutException.class) {
                 if (!pingPongTimeoutExceptionFuture.isDone()){
                     pingPongTimeoutExceptionFuture.complete(true);
+                    System.out.println("1");
                 }
             }
         }

@@ -34,6 +34,7 @@ message PNetPackageHandshakeNode  {
   sfixed64 runtimeIdLeastSigBits = 3;//node runtime uuid
   repeated PNetPackageComponent pNetPackageComponents = 4;
   int32 protocolVersion = 5;//cluster-grpc transport protocol version
+  int32 waitResponseTimeoutMillis = 6;//timeout wait response milliseconds
 }
 
 message PNetPackageStartComponent  {

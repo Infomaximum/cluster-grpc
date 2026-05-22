@@ -40,7 +40,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
 
     private final Channels channels;
 
-    private final Duration timeoutConfirmationWaitResponse;
+    private final Duration waitResponseTimeout;
 
     private final int protocolVersion;
 
@@ -59,7 +59,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         node = nodeBuilder.build();
 
         this.targets = builder.getTargets();
-        this.timeoutConfirmationWaitResponse = builder.getTimeoutConfirmationWaitResponse();
+        this.waitResponseTimeout = builder.getWaitResponseTimeout();
         this.protocolVersion = builder.getProtocolVersion();
 
         this.grpcPoolExecutor = new GrpcPoolExecutor(uncaughtExceptionHandler);
@@ -69,7 +69,7 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
                 .withSsl(fileCertChain, filePrivateKey, trustStore)
                 .withServer(builder.getServer())
                 .withTargets(targets)
-                .withPingPongTimeout(builder.getPingPongInterval(), builder.getPingPongTimeout())
+                .withPingPongInterval(builder.getPingPongInterval())
                 .build();
 
         this.managerRuntimeComponent = new GrpcManagerRuntimeComponent(this, channels);
@@ -100,8 +100,8 @@ public class GrpcNetworkTransitImpl implements NetworkTransit {
         return channels.getRemoteNodes();
     }
 
-    public Duration getTimeoutConfirmationWaitResponse() {
-        return timeoutConfirmationWaitResponse;
+    public Duration getWaitResponseTimeout() {
+        return waitResponseTimeout;
     }
 
     public int getProtocolVersion() {

@@ -1,6 +1,7 @@
 package com.infomaximum.cluster.core.service.transport.network.grpc.internal.netpackage;
 
 import com.infomaximum.cluster.core.component.RuntimeComponentInfo;
+import com.infomaximum.cluster.core.service.transport.network.grpc.GrpcRemoteNode;
 import com.infomaximum.cluster.core.service.transport.network.grpc.internal.GrpcNetworkTransitImpl;
 import com.infomaximum.cluster.core.service.transport.network.grpc.struct.*;
 import com.infomaximum.cluster.core.service.transport.network.local.LocalManagerRuntimeComponent;
@@ -11,15 +12,18 @@ public class NetPackageHandshakeCreator {
 
     //TODO не оптимально
     public static PNetPackage createResponse(GrpcNetworkTransitImpl grpcNetworkTransit) {
-        PNetPackageHandshakeNode handshakeNode = buildHandshakeNode(grpcNetworkTransit);
+        long declaredTimeoutMillis = grpcNetworkTransit.getWaitResponseTimeout().toMillis();
+        PNetPackageHandshakeNode handshakeNode = buildHandshakeNode(grpcNetworkTransit, declaredTimeoutMillis);
         PNetPackageHandshakeResponse packageHandshake = PNetPackageHandshakeResponse.newBuilder()
                 .setNode(handshakeNode)
                 .build();
         return PNetPackage.newBuilder().setHandshakeResponse(packageHandshake).build();
     }
 
-    public static PNetPackage createRequest(GrpcNetworkTransitImpl grpcNetworkTransit, UUID channelUuid) {
-        PNetPackageHandshakeNode handshakeNode = buildHandshakeNode(grpcNetworkTransit);
+    public static PNetPackage createRequest(GrpcNetworkTransitImpl grpcNetworkTransit, UUID channelUuid, GrpcRemoteNode target) {
+        long declaredTimeoutMillis = target.resolveEffectiveWaitResponseTimeout(
+                grpcNetworkTransit.getWaitResponseTimeout()).toMillis();
+        PNetPackageHandshakeNode handshakeNode = buildHandshakeNode(grpcNetworkTransit, declaredTimeoutMillis);
         PNetPackageHandshakeRequest packageHandshake = PNetPackageHandshakeRequest.newBuilder()
                 .setChannelIdMostSigBits(channelUuid.getMostSignificantBits())
                 .setChannelIdLeastSigBit(channelUuid.getLeastSignificantBits())
@@ -28,14 +32,22 @@ public class NetPackageHandshakeCreator {
         return PNetPackage.newBuilder().setHandshakeRequest(packageHandshake).build();
     }
 
-    private static PNetPackageHandshakeNode buildHandshakeNode(GrpcNetworkTransitImpl grpcNetworkTransit) {
+    private static PNetPackageHandshakeNode buildHandshakeNode(GrpcNetworkTransitImpl grpcNetworkTransit, long declaredTimeoutMillis) {
         UUID nodeRuntimeId = grpcNetworkTransit.getNode().getRuntimeId();
+
+        // protobuf-поле имеет тип int32; реалистичные timeout-значения (секунды–часы) с запасом
+        // умещаются, но при ошибочной конфигурации (> ~24.8 дней) клампим, чтобы избежать молчаливого
+        // усечения отрицательным значением
+        int declaredTimeoutMillisInt = declaredTimeoutMillis > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : (int) declaredTimeoutMillis;
 
         PNetPackageHandshakeNode.Builder nodeBuilder = PNetPackageHandshakeNode.newBuilder()
                 .setName(grpcNetworkTransit.getNode().getName())
                 .setRuntimeIdMostSigBits(nodeRuntimeId.getMostSignificantBits())
                 .setRuntimeIdLeastSigBits(nodeRuntimeId.getLeastSignificantBits())
-                .setProtocolVersion(grpcNetworkTransit.getProtocolVersion());
+                .setProtocolVersion(grpcNetworkTransit.getProtocolVersion())
+                .setWaitResponseTimeoutMillis(declaredTimeoutMillisInt);
 
         LocalManagerRuntimeComponent localManagerRuntimeComponent = grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent();
         for (RuntimeComponentInfo runtimeComponentInfo : localManagerRuntimeComponent.getComponents()) {

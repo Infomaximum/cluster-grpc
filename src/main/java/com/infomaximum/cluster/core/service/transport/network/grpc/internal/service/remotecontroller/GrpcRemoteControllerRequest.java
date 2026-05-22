@@ -24,6 +24,11 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
     private final static long TIME_CLEAR_REQUEST_EXECUTE = Duration.ofHours(2).toMillis();
 
+    private final static long SCHEDULER_TICK_MILLIS = 1000;
+
+    /** Делитель эффективного тайм-аута для интервала keep-alive между {@code PNetPackageProcessing}*/
+    private final static int KA_INTERVAL_DIVISOR = 3;
+
     private final GrpcNetworkTransitImpl grpcNetworkTransit;
 
     private final AtomicInteger ids;
@@ -43,11 +48,11 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         this.bodyProcessMap = new ConcurrentHashMap<>();
 
         this.scheduledServiceWaitNetExecute = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledServiceWaitNetExecute.scheduleWithFixedDelay(() -> checkTimeoutRequest(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis() / 3, TimeUnit.MILLISECONDS);
+        this.scheduledServiceWaitNetExecute.scheduleWithFixedDelay(this::checkTimeoutRequest, 1, SCHEDULER_TICK_MILLIS, TimeUnit.MILLISECONDS);
 
         this.waitLocalExecuteRequest = new ConcurrentHashMap<>();
         this.scheduledServiceWaitLocalExecute = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledServiceWaitLocalExecute.scheduleWithFixedDelay(() -> sendWaitResponsePackets(), 1, grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis() / 3, TimeUnit.MILLISECONDS);
+        this.scheduledServiceWaitLocalExecute.scheduleWithFixedDelay(this::sendWaitResponsePackets, 1, SCHEDULER_TICK_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private int nextPackageId() {
@@ -69,11 +74,19 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         //Формируем список пакетов-запросов, с учетом размера аргументов
         PNetPackage[] pNetPackages = PackageBodyUtils.getPackages(args, builderPackageRequest);
 
+        // Фиксируем канал к target-ноде: с одного и того же канала берём channelTimeoutMillis
+        // и через него же делаем первую попытку отправки.
+        Channel channel = grpcNetworkTransit.getChannels().getChannel(targetNodeRuntimeId);
+        if (channel == null) {
+            throw grpcNetworkTransit.transportManager.getExceptionBuilder().buildRemoteComponentUnavailableException(targetNodeRuntimeId, null);
+        }
+        long requestTimeoutMillis = channel.getChannelTimeoutMillis();
+
         //Отправляем, исходим из того, что, может отправиться несколько копий пакета, на другой стороне нужна фильтрация
-        requests.put(packageId, new NetRequest(targetNodeRuntimeId, targetComponentId, rControllerClassName, methodKey, new Timeout(countTimeFail()), completableFuture));
+        requests.put(packageId, new NetRequest(targetNodeRuntimeId, targetComponentId, rControllerClassName, methodKey, new Timeout(requestTimeoutMillis, countTimeFail(requestTimeoutMillis)), completableFuture));
         try {
             for (PNetPackage pNetPackage : pNetPackages) {
-                grpcNetworkTransit.getChannels().sendPacketWithRepeat(targetNodeRuntimeId, pNetPackage);
+                grpcNetworkTransit.getChannels().sendPacketWithRepeat(channel, pNetPackage);
             }
         } catch (Exception e) {
             requests.remove(packageId);
@@ -121,12 +134,8 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         if (netRequest == null) {
             log.debug("Incoming unknown package: {}", PackageLog.toString(response));
         } else {
-            netRequest.timeout().timeFail = countTimeFail();
+            netRequest.timeout().timeFail = countTimeFail(netRequest.timeout().requestTimeoutMillis);
         }
-    }
-
-    private long countTimeFail() {
-        return System.currentTimeMillis() + grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis();
     }
 
     public void handleIncomingPacket(PNetPackageBody packageBody) {
@@ -137,16 +146,21 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         if (!bodyProcess.isEnd()) {
             NetRequest netRequest = requests.get(bodyProcess.getPackageId());
             if (netRequest != null) {
-                netRequest.timeout().timeFail = countTimeFail();
+                netRequest.timeout().timeFail = countTimeFail(netRequest.timeout().requestTimeoutMillis);
             }
         }
     }
 
+    private long countTimeFail(long requestTimeoutMillis) {
+        return System.currentTimeMillis() + requestTimeoutMillis;
+    }
+
     public void handleIncomingPacket(PNetPackageRequest request, ChannelImpl channel) {
-        UUID remoteNodeRuntimeId = channel.remoteNode.node.getRuntimeId();
+        UUID remoteNodeRuntimeId = channel.getRemoteNode().node.getRuntimeId();
         int packageId = request.getPackageId();
         WaitLocalExecute waitLocalExecute = new WaitLocalExecute(remoteNodeRuntimeId, packageId);
-        WaitLocalExecuteResult waitLocalExecuteResult = new WaitLocalExecuteResult();
+        Duration requestTimeout = Duration.ofMillis(channel.getChannelTimeoutMillis());
+        WaitLocalExecuteResult waitLocalExecuteResult = new WaitLocalExecuteResult(requestTimeout.toMillis() / KA_INTERVAL_DIVISOR);
 
         //Механизм проверки, что это не дублирующий пакет
         synchronized (waitLocalExecuteRequest) {
@@ -158,7 +172,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         }
         ComponentExecutorTransport.Result result;
         try {
-            byte[][] byteArgs = getArgs(request);
+            byte[][] byteArgs = getArgs(request, requestTimeout);
             result = grpcNetworkTransit.transportManager.localRequest(
                     request.getTargetComponentId(),
                     request.getRControllerClassName(),
@@ -195,7 +209,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         }
     }
 
-    public byte[][] getArgs(PNetPackageRequest request) throws TimeoutException {
+    public byte[][] getArgs(PNetPackageRequest request, Duration waitTimeout) throws TimeoutException {
         int argsWaitCount = 0;
         for (PNetPackageBody pNetPackageBody : request.getArgsList()) {
             if (PackageBodyUtils.getUuid(pNetPackageBody) != null) {
@@ -223,7 +237,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
         }
         if (countDownLatch != null) {
             try {
-                if (!countDownLatch.await(grpcNetworkTransit.getTimeoutConfirmationWaitResponse().toMillis(), TimeUnit.MILLISECONDS)) {
+                if (!countDownLatch.await(waitTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
                     throw new TimeoutException();
                 }
             } catch (InterruptedException e) {
@@ -266,11 +280,15 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
     }
 
     private void sendWaitResponsePackets() {
-        long cleaningTime = System.currentTimeMillis() - TIME_CLEAR_REQUEST_EXECUTE;
+        long now = System.currentTimeMillis();
+        long cleaningTime = now - TIME_CLEAR_REQUEST_EXECUTE;
         for (Map.Entry<WaitLocalExecute, WaitLocalExecuteResult> entry : waitLocalExecuteRequest.entrySet()) {
             WaitLocalExecute waitLocalExecute = entry.getKey();
             WaitLocalExecuteResult waitLocalExecuteResult = entry.getValue();
             if (waitLocalExecuteResult.getEndTime() == null) {
+                if (now < waitLocalExecuteResult.getNextKaTimeMillis()) {
+                    continue;
+                }
                 PNetPackageProcessing pNetPackageProcessing = PNetPackageProcessing.newBuilder()
                         .setPackageId(waitLocalExecute.packageId())
                         .build();
@@ -280,6 +298,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
                 } catch (Exception e) {
                     log.debug("Exception send package: {}, to node: {}", PackageLog.toString(pNetPackage), waitLocalExecute.nodeRuntimeId(), e);
                 }
+                waitLocalExecuteResult.scheduleNextKa();
             } else if (waitLocalExecuteResult.getEndTime().toEpochMilli() < cleaningTime) {
                 waitLocalExecuteRequest.remove(waitLocalExecute);
             }

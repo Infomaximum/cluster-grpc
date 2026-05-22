@@ -161,7 +161,7 @@ public class Client implements AutoCloseable {
         //Инициализируем
         channelUuid = UUID.randomUUID();
         channelRequestObserver = exchangeStub.exchange(responseObserver);
-        PNetPackage packageHandshake = NetPackageHandshakeCreator.createRequest(grpcNetworkTransit, channelUuid);
+        PNetPackage packageHandshake = NetPackageHandshakeCreator.createRequest(grpcNetworkTransit, channelUuid, remoteNode);
         channelRequestObserver.onNext(packageHandshake);
     }
 
@@ -209,7 +209,8 @@ public class Client implements AutoCloseable {
             return null;
         }
 
-        ChannelClient clientChannel = new ChannelClient.Builder(channelUuid, channelRequestObserver, requestPackage.getHandshakeResponse()).build();
+        long channelTimeoutMillis = remoteNode.resolveEffectiveWaitResponseTimeout(grpcNetworkTransit.getWaitResponseTimeout()).toMillis();
+        ChannelClient clientChannel = new ChannelClient.Builder(channelUuid, channelRequestObserver, requestPackage.getHandshakeResponse(), channelTimeoutMillis).build();
 
         //Проверяем, что не подключились к себе же
         Node currentNode = grpcNetworkTransit.getNode();

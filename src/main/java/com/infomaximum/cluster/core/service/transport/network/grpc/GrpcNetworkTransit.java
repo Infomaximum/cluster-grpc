@@ -17,19 +17,17 @@ public interface GrpcNetworkTransit {
 
         public record Server(int port){} //String host
 
-        public static final Duration DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE = Duration.ofSeconds(20);
+        public static final Duration DEFAULT_WAIT_RESPONSE_TIMEOUT = Duration.ofSeconds(20);
 
         public static final Duration DEFAULT_PING_PONG_INTERVAL = Duration.ofSeconds(5);
-        public static final Duration DEFAULT_PING_PONG_TIMEOUT = Duration.ofSeconds(3);
 
         private String nodeName;
-        private Server server;;
+        private Server server;
         private final List<GrpcRemoteNode> targets;
 
-        private Duration timeoutConfirmationWaitResponse;
+        private Duration waitResponseTimeout;
 
         private Duration pingPongInterval;
-        private Duration pingPongTimeout;
 
         private int protocolVersion;
 
@@ -40,9 +38,8 @@ public interface GrpcNetworkTransit {
 
         public Builder(Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
             this.targets = new ArrayList<>();
-            this.timeoutConfirmationWaitResponse = DEFAULT_TIMEOUT_CONFIRMATION_WAIT_RESPONSE;
+            this.waitResponseTimeout = DEFAULT_WAIT_RESPONSE_TIMEOUT;
             this.pingPongInterval = DEFAULT_PING_PONG_INTERVAL;
-            this.pingPongTimeout = DEFAULT_PING_PONG_TIMEOUT;
             this.protocolVersion = GrpcProtocolVersion.CURRENT;
             this.uncaughtExceptionHandler = uncaughtExceptionHandler;
         }
@@ -75,14 +72,19 @@ public interface GrpcNetworkTransit {
             return this;
         }
 
-        public Builder withTimeoutConfirmationWaitResponse(Duration value) {
-            this.timeoutConfirmationWaitResponse = value;
+        public Builder withWaitResponseTimeout(Duration value) {
+            if (value.isNegative() || value.isZero()) {
+                throw new IllegalArgumentException("waitResponseTimeout must be positive, got: " + value);
+            }
+            this.waitResponseTimeout = value;
             return this;
         }
 
-        public Builder withPingPongTimeout(Duration interval, Duration timeout) {
+        public Builder withPingPongInterval(Duration interval) {
+            if (interval.isNegative() || interval.isZero()) {
+                throw new IllegalArgumentException("pingPongInterval must be positive, got: " + interval);
+            }
             this.pingPongInterval = interval;
-            this.pingPongTimeout = timeout;
             return this;
         }
 
@@ -111,16 +113,12 @@ public interface GrpcNetworkTransit {
             return Collections.unmodifiableList(targets);
         }
 
-        public Duration getTimeoutConfirmationWaitResponse() {
-            return timeoutConfirmationWaitResponse;
+        public Duration getWaitResponseTimeout() {
+            return waitResponseTimeout;
         }
 
         public Duration getPingPongInterval() {
             return pingPongInterval;
-        }
-
-        public Duration getPingPongTimeout() {
-            return pingPongTimeout;
         }
 
         public int getProtocolVersion() {

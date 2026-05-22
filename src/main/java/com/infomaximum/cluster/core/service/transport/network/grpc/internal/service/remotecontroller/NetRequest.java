@@ -15,9 +15,12 @@ public record NetRequest(UUID targetNodeRuntimeId,
 
 class Timeout {
 
-    public long timeFail;
+    public final long requestTimeoutMillis;
 
-    public Timeout(long timeFail) {
+    public volatile long timeFail;
+
+    public Timeout(long requestTimeoutMillis, long timeFail) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
         this.timeFail = timeFail;
     }
 
