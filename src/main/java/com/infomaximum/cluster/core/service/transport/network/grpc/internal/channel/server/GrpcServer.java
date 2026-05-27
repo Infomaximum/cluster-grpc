@@ -70,10 +70,12 @@ public class GrpcServer implements AutoCloseable {
 
     @Override
     public void close() {
-        server.shutdownNow();
-        try {
-            server.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        if (server != null) {
+            server.shutdownNow();
+            try {
+                server.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+            }
         }
     }
 }
