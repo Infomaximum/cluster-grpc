@@ -186,9 +186,8 @@ public class Client implements AutoCloseable {
 
     private ChannelClient initChannel(PNetPackage requestPackage) {
         if (!requestPackage.hasHandshakeResponse()) {
+            // Не кидаем RuntimeException, актуальный handshake придёт по порядку либо сработает onError/onCompleted.
             log.error("Unknown state, channel: null, packet: {}. Disconnect", requestPackage.toString());
-            //TODO надо переподнимать соединение, а не падать
-            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
             return null;
         }
 
@@ -232,7 +231,7 @@ public class Client implements AutoCloseable {
             //За то время пока устанавливалось соединение могли загрузится новые компоненты - стоит повторно отправить свое состояние
             PNetPackage netPackageUpdateNode = NetPackageHandshakeCreator.buildPacketUpdateNode(grpcNetworkTransit.getManagerRuntimeComponent().getLocalManagerRuntimeComponent());
             channelRequestObserver.onNext(netPackageUpdateNode);
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             log.error("Error init channel", e);
             channels.unRegisterChannel(clientChannel, new CauseNodeDisconnect(CauseNodeDisconnect.Type.EXCEPTION, e));
             return null;

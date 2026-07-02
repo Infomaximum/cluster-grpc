@@ -102,9 +102,8 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
 
     private ChannelServer initChannel(StreamObserver<PNetPackage> responseObserver, PNetPackage requestPackage) {
         if (!requestPackage.hasHandshakeRequest()) {
+            // Пакет от клиента до handshake (напр. протухший пакет старого стрима) — не приводит к падению
             log.error("Unknown state, channel: null, packet: {}. Disconnect", requestPackage.toString());
-            //TODO надо переподнимать соединение, а не падать
-            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
             return null;
         }
 
@@ -175,9 +174,8 @@ public class PServiceExchangeImpl extends PServiceExchangeGrpc.PServiceExchangeI
         } else if (requestPackage.hasStartComponent()) {
             channels.getComponentService().handleIncomingPacket(channel, requestPackage.getStartComponent());
         }  else {
+            // Неизвестный/протухший пакет — дропаем, не падаем.
             log.error("Unknown state, channel: {}, packet: {}. Disconnect", channel, requestPackage.toString());
-            //TODO надо переподнимать соединение, а не падать
-            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), new RuntimeException("Unknown state"));
         }
     }
 
