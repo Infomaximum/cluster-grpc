@@ -76,7 +76,7 @@ public class GrpcRemoteControllerRequest implements RemoteControllerRequest {
 
         // Фиксируем канал к target-ноде: с одного и того же канала берём channelTimeoutMillis
         // и через него же делаем первую попытку отправки.
-        Channel channel = grpcNetworkTransit.getChannels().getChannel(targetNodeRuntimeId);
+        Channel channel = grpcNetworkTransit.getChannels().getChannelWithRepeat(targetNodeRuntimeId);
         if (channel == null) {
             throw grpcNetworkTransit.transportManager.getExceptionBuilder().buildRemoteComponentUnavailableException(targetNodeRuntimeId, null);
         }

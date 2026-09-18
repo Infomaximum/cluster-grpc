@@ -66,6 +66,10 @@ public class Channels implements AutoCloseable {
         return channelList.getRandomChannel(nodeRuntimeId);
     }
 
+    public Channel getChannelWithRepeat(UUID nodeRuntimeId) {
+        return channelList.getRandomChannel(nodeRuntimeId, DEFAULT_ATTEMPT);
+    }
+
     public Channel getChannel(UUID nodeRuntimeId, int attempt) {
         return channelList.getRandomChannel(nodeRuntimeId, attempt);
     }

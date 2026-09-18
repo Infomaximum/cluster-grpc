@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ChannelList {
 
@@ -130,13 +131,12 @@ public class ChannelList {
     }
 
     private Channel getRandomChannel(List<Channel> items) {
-        int index = new Random().nextInt(items.size());
-        int i = 0;
+        List<Channel> available = new ArrayList<>(items.size());
         for (Channel channel : items) {
-            if (!channel.isAvailable()) continue;
-            if (i++ == index) return channel;
+            if (channel.isAvailable()) available.add(channel);
         }
-        return null;
+        if (available.isEmpty()) return null;
+        return available.get(ThreadLocalRandom.current().nextInt(available.size()));
     }
 
     public Set<UUID> getNodes() {
