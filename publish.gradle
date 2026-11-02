@@ -61,7 +61,7 @@ publishing {
                 def dependencyNodeGuava = dependenciesNode.appendNode('dependency')
                 dependencyNodeGuava.appendNode('groupId', 'com.google.guava')
                 dependencyNodeGuava.appendNode('artifactId', 'guava')
-                dependencyNodeGuava.appendNode('version', '33.3.1-jre')
+                dependencyNodeGuava.appendNode('version', '33.7.2-jre')
                 dependencyNodeGuava.appendNode('scope', 'runtime')
                 def dependencyNodeGuavaExclusions = dependencyNodeGuava.appendNode('exclusions')
                 def dependencyNodeGuavaExclusionJ2objc = dependencyNodeGuavaExclusions.appendNode('exclusion')
@@ -78,17 +78,13 @@ publishing {
     }
     repositories {
         maven {
-            def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            def releasesRepoUrl = "https://maven.corp.infomaximum.com/repository/maven-releases/"
+            def snapshotsRepoUrl = "https://maven.corp.infomaximum.com/repository/maven-snapshots/"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
             credentials {
-                username ossrhUsername
-                password ossrhPassword
+                username mavenOfficeUsername
+                password mavenOfficePassword
             }
         }
     }
-}
-
-signing {
-    sign publishing.publications.mavenJava
 }
