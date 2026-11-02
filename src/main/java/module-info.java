@@ -4,7 +4,7 @@ module com.infomaximum.cluster.grpc {
     requires java.annotation;
     requires com.google.protobuf;
     requires com.google.common;
-    requires com.google.guava.failureaccess;
+    requires com.google.common.util.concurrent.internal;
 
     exports com.infomaximum.cluster.core.service.transport.network.grpc;
     exports com.infomaximum.cluster.core.service.transport.network.grpc.exception;
