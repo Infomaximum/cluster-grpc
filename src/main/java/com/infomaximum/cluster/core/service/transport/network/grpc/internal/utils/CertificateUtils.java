@@ -7,9 +7,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.Enumeration;
 
 public class CertificateUtils {
@@ -18,6 +20,15 @@ public class CertificateUtils {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         try (InputStream in = new ByteArrayInputStream(certificate)) {
             return (X509Certificate) certificateFactory.generateCertificate(in);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Collection<? extends Certificate> buildAll(byte[] certificates) throws CertificateException {
+        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        try (InputStream in = new ByteArrayInputStream(certificates)) {
+            return certificateFactory.generateCertificates(in);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -63,17 +74,24 @@ public class CertificateUtils {
             } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException ignore) {
             }
 
-            //Предполагаем что перед нами обычный файл с сертификатами
-            X509Certificate certificate;
+            //Предполагаем что перед нами обычный файл с сертификатами: в нём может быть цепочка, берём все
+            Collection<? extends Certificate> certificates;
             try {
-                certificate = build(trustCertificate);
+                certificates = buildAll(trustCertificate);
             } catch (CertificateException ce) {
                 throw new ClusterGrpcException("Error build certificate from truststore (" + i + ")", ce);
             }
-            try {
-                keyStore.setCertificateEntry("ext-" + i, certificate);
-            } catch (KeyStoreException e) {
-                throw new ClusterGrpcException(e);
+            if (certificates.isEmpty()) {
+                throw new ClusterGrpcException("No certificates found in truststore (" + i + ")");
+            }
+            int j = 0;
+            for (Certificate certificate : certificates) {
+                try {
+                    keyStore.setCertificateEntry("ext-" + i + "-" + j, certificate);
+                } catch (KeyStoreException e) {
+                    throw new ClusterGrpcException(e);
+                }
+                j++;
             }
         }
 

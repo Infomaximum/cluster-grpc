@@ -70,4 +70,46 @@ public class HttpsTest {
             Assertions.assertEquals(value, rControllerMemory.get(key));
         }
     }
+
+    /**
+     * Сертификаты нод выпущены промежуточным ЦС, в доверенных у каждой ноды — связка «сертификат соседа + промежуточный + корневой»
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3, 4})
+    public void testTrustCaChainBundle(int modeId) throws Exception {
+        try (Clusters clusters = new Clusters.Builder(modeId)
+                .withServerSSL("ssl/ca-chain/node1-chain.crt", "ssl/ca-chain/node1.key", "ssl/ca-chain/node2-bundle.crt", Clusters.Builder.Item.CLUSTER1)
+                .withServerSSL("ssl/ca-chain/node2-chain.crt", "ssl/ca-chain/node2.key", "ssl/ca-chain/node1-bundle.crt", Clusters.Builder.Item.CLUSTER2)
+                .build()) {
+            Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
+            RControllerMemory rControllerMemory = custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+
+            String key = "ping";
+            String value = "pong";
+            rControllerMemory.set(key, value);
+
+            Assertions.assertEquals(value, rControllerMemory.get(key));
+        }
+    }
+
+    /**
+     * Сертификаты нод выпущены промежуточным ЦС, в доверенных у каждой ноды — только корневой сертификат
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3, 4})
+    public void testTrustCaRoot(int modeId) throws Exception {
+        try (Clusters clusters = new Clusters.Builder(modeId)
+                .withServerSSL("ssl/ca-chain/node1-chain.crt", "ssl/ca-chain/node1.key", "ssl/ca-chain/root.crt", Clusters.Builder.Item.CLUSTER1)
+                .withServerSSL("ssl/ca-chain/node2-chain.crt", "ssl/ca-chain/node2.key", "ssl/ca-chain/root.crt", Clusters.Builder.Item.CLUSTER2)
+                .build()) {
+            Custom1Component custom1Component = clusters.getCluster2().getAnyLocalComponent(Custom1Component.class);
+            RControllerMemory rControllerMemory = custom1Component.getRemotes().get(MemoryComponent.class, RControllerMemory.class);
+
+            String key = "ping";
+            String value = "pong";
+            rControllerMemory.set(key, value);
+
+            Assertions.assertEquals(value, rControllerMemory.get(key));
+        }
+    }
 }
