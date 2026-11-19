@@ -32,6 +32,7 @@ public class Clusters implements AutoCloseable {
                 clusterBuilder1.withListenerUpdateConnect(updateNodeConnect1);
             }
             cluster1 = clusterBuilder1.build();
+            cluster1.start();
         });
 
         ExecutorUtil.executors.execute(() -> {
@@ -42,6 +43,7 @@ public class Clusters implements AutoCloseable {
                 clusterBuilder2.withListenerUpdateConnect(updateNodeConnect2);
             }
             cluster2 = clusterBuilder2.build();
+            cluster2.start();
         });
 
         //Ожидаем старта
